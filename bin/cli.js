@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
-const { spawn } = require('child_process');
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
+import { spawn } from 'child_process';
+import path from 'path';
+import os from 'os';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const platform = os.platform();
 const rootDir = path.join(__dirname, '..');
