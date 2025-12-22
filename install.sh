@@ -4,16 +4,23 @@
 #
 # Usage:
 #   Test error reporting:
-#     CLAUDE_GLM_TEST_ERROR=1 bash <(curl -fsSL https://raw.githubusercontent.com/JoeInnsp23/claude-glm-wrapper/main/install.sh)
+#     CLAUDE_GLM_TEST_ERROR=1 bash <(curl -fsSL https://raw.githubusercontent.com/MohMaya/claude-glm-wrapper/main/install.sh)
 #     OR: ./install.sh --test-error
 #
 #   Enable debug mode:
-#     CLAUDE_GLM_DEBUG=1 bash <(curl -fsSL https://raw.githubusercontent.com/JoeInnsp23/claude-glm-wrapper/main/install.sh)
+#     CLAUDE_GLM_DEBUG=1 bash <(curl -fsSL https://raw.githubusercontent.com/MohMaya/claude-glm-wrapper/main/install.sh)
 #     OR: ./install.sh --debug
+#
+#   Non-interactive installation:
+#     ./install.sh --reinstall --api-key=YOUR_KEY
+#     ./install.sh --reinstall --skip-ccx
 
 # Parse command-line arguments
 TEST_ERROR=false
 DEBUG=false
+REINSTALL=false
+API_KEY_ARG=""
+SKIP_CCX=false
 
 for arg in "$@"; do
     case $arg in
@@ -23,6 +30,18 @@ for arg in "$@"; do
             ;;
         --debug)
             DEBUG=true
+            shift
+            ;;
+        --reinstall)
+            REINSTALL=true
+            shift
+            ;;
+        --skip-ccx)
+            SKIP_CCX=true
+            shift
+            ;;
+        --api-key=*)
+            API_KEY_ARG="${arg#*=}"
             shift
             ;;
         *)
@@ -38,6 +57,18 @@ fi
 
 if [ "$CLAUDE_GLM_DEBUG" = "1" ] || [ "$CLAUDE_GLM_DEBUG" = "true" ]; then
     DEBUG=true
+fi
+
+if [ "$CLAUDE_GLM_REINSTALL" = "1" ] || [ "$CLAUDE_GLM_REINSTALL" = "true" ]; then
+    REINSTALL=true
+fi
+
+# Detect if running in interactive mode (TTY available)
+INTERACTIVE=true
+if [ ! -t 0 ]; then
+    INTERACTIVE=false
+    # In non-interactive mode, default to reinstall
+    REINSTALL=true
 fi
 
 # Configuration
@@ -82,15 +113,23 @@ report_error() {
     # Ask if user wants to report the error
     echo "Would you like to report this error to GitHub?"
     echo "This will open your browser with a pre-filled issue report."
-    read -p "Report error? (y/n): " report_choice
+    
+    local report_choice="n"
+    if [ "$INTERACTIVE" = true ]; then
+        read -p "Report error? (y/n): " report_choice
+    else
+        echo "ℹ️  Non-interactive mode: skipping error report prompt"
+    fi
     echo ""
 
     if [ "$report_choice" != "y" ] && [ "$report_choice" != "Y" ]; then
         echo "Error not reported. You can get help at:"
-        echo "  https://github.com/JoeInnsp23/claude-glm-wrapper/issues"
-        echo ""
-        echo "Press Enter to finish..."
-        read
+        echo "  https://github.com/MohMaya/claude-glm-wrapper/issues"
+        if [ "$INTERACTIVE" = true ]; then
+            echo ""
+            echo "Press Enter to finish..."
+            read
+        fi
         return
     fi
 
@@ -151,7 +190,7 @@ $sanitized_error
         encoded_title="Installation%20Error%3A%20Unix%2FLinux%2FmacOS"
     fi
 
-    local issue_url="https://github.com/JoeInnsp23/claude-glm-wrapper/issues/new?title=${encoded_title}&body=${encoded_body}&labels=bug,unix,installation"
+    local issue_url="https://github.com/MohMaya/claude-glm-wrapper/issues/new?title=${encoded_title}&body=${encoded_body}&labels=bug,unix,installation"
 
     echo "📋 Error details have been prepared for reporting."
     echo ""
@@ -185,9 +224,11 @@ $sanitized_error
         echo "After submitting (or if you choose not to), return here."
     fi
 
-    echo ""
-    echo "Press Enter to continue..."
-    read
+    if [ "$INTERACTIVE" = true ]; then
+        echo ""
+        echo "Press Enter to continue..."
+        read
+    fi
 }
 
 # Find all existing wrapper installations
@@ -257,7 +298,15 @@ cleanup_old_wrappers() {
     fi
 
     echo ""
-    read -p "Would you like to clean up old installations? (y/n): " cleanup_choice
+    
+    local cleanup_choice="n"
+    if [ "$INTERACTIVE" = true ]; then
+        read -p "Would you like to clean up old installations? (y/n): " cleanup_choice
+    else
+        # In non-interactive mode, auto-clean old installations
+        cleanup_choice="y"
+        echo "ℹ️  Non-interactive mode: auto-cleaning old installations..."
+    fi
 
     if [[ "$cleanup_choice" == "y" || "$cleanup_choice" == "Y" ]]; then
         echo ""
@@ -800,10 +849,15 @@ check_claude_installation() {
         echo "2. Install Claude Code from: https://www.anthropic.com/claude-code"
         echo "3. Continue anyway (wrappers will be created but won't work until claude is available)"
         echo ""
-        read -p "Continue with installation? (y/n): " continue_choice
-        if [[ "$continue_choice" != "y" && "$continue_choice" != "Y" ]]; then
-            echo "Installation cancelled."
-            exit 1
+        
+        if [ "$INTERACTIVE" = true ]; then
+            read -p "Continue with installation? (y/n): " continue_choice
+            if [[ "$continue_choice" != "y" && "$continue_choice" != "Y" ]]; then
+                echo "Installation cancelled."
+                exit 1
+            fi
+        else
+            echo "ℹ️  Non-interactive mode: continuing anyway..."
         fi
         return 1
     fi
@@ -833,47 +887,66 @@ main() {
     if [ -f "$USER_BIN_DIR/claude-glm" ] || [ -f "$USER_BIN_DIR/claude-glm-fast" ]; then
         echo ""
         echo "✅ Existing installation detected!"
-        echo "1) Update API key only"
-        echo "2) Reinstall everything"
-        echo "3) Cancel"
-        read -p "Choice (1-3): " update_choice
         
-        case "$update_choice" in
-            1)
-                read -p "Enter your Z.AI API key: " input_key
-                if [ -n "$input_key" ]; then
-                    ZAI_API_KEY="$input_key"
-                    create_claude_glm_wrapper
-                    create_claude_glm_46_wrapper
-                    create_claude_glm_45_wrapper
-                    create_claude_glm_fast_wrapper
-                    echo "✅ API key updated!"
+        if [ "$REINSTALL" = true ]; then
+            echo "ℹ️  Reinstalling (--reinstall flag or non-interactive mode)..."
+        elif [ "$INTERACTIVE" = true ]; then
+            echo "1) Update API key only"
+            echo "2) Reinstall everything"
+            echo "3) Cancel"
+            read -p "Choice (1-3): " update_choice
+            
+            case "$update_choice" in
+                1)
+                    read -p "Enter your Z.AI API key: " input_key
+                    if [ -n "$input_key" ]; then
+                        ZAI_API_KEY="$input_key"
+                        create_claude_glm_wrapper
+                        create_claude_glm_46_wrapper
+                        create_claude_glm_45_wrapper
+                        create_claude_glm_fast_wrapper
+                        echo "✅ API key updated!"
+                        exit 0
+                    fi
+                    ;;
+                2)
+                    echo "Reinstalling..."
+                    ;;
+                *)
                     exit 0
-                fi
-                ;;
-            2)
-                echo "Reinstalling..."
-                ;;
-            *)
-                exit 0
-                ;;
-        esac
+                    ;;
+            esac
+        else
+            echo "ℹ️  Non-interactive mode: reinstalling..."
+        fi
     fi
     
-    # Get API key
-    echo ""
-    echo "Enter your Z.AI API key (from https://z.ai/manage-apikey/apikey-list)"
-    read -p "API Key: " input_key
-    
-    if [ -n "$input_key" ]; then
-        ZAI_API_KEY="$input_key"
-        echo "✅ API key received (${#input_key} characters)"
+    # Get API key (from argument, environment, or prompt)
+    if [ -n "$API_KEY_ARG" ]; then
+        ZAI_API_KEY="$API_KEY_ARG"
+        echo "✅ API key provided via argument (${#ZAI_API_KEY} characters)"
+    elif [ -n "${ZAI_API_KEY_ENV:-}" ]; then
+        ZAI_API_KEY="$ZAI_API_KEY_ENV"
+        echo "✅ API key provided via environment (${#ZAI_API_KEY} characters)"
+    elif [ "$INTERACTIVE" = true ]; then
+        echo ""
+        echo "Enter your Z.AI API key (from https://z.ai/manage-apikey/apikey-list)"
+        read -p "API Key: " input_key
+        
+        if [ -n "$input_key" ]; then
+            ZAI_API_KEY="$input_key"
+            echo "✅ API key received (${#input_key} characters)"
+        else
+            echo "⚠️  No API key provided. Add it manually later to:"
+            echo "   $USER_BIN_DIR/claude-glm"
+            echo "   $USER_BIN_DIR/claude-glm-4.6"
+            echo "   $USER_BIN_DIR/claude-glm-4.5"
+            echo "   $USER_BIN_DIR/claude-glm-fast"
+        fi
     else
-        echo "⚠️  No API key provided. Add it manually later to:"
-        echo "   $USER_BIN_DIR/claude-glm"
-        echo "   $USER_BIN_DIR/claude-glm-4.6"
-        echo "   $USER_BIN_DIR/claude-glm-4.5"
-        echo "   $USER_BIN_DIR/claude-glm-fast"
+        echo "⚠️  Non-interactive mode: No API key provided."
+        echo "   Use --api-key=YOUR_KEY or set ZAI_API_KEY_ENV environment variable."
+        echo "   Or add it manually later to the wrapper scripts."
     fi
     
     # Create wrappers
@@ -884,17 +957,26 @@ main() {
     create_shell_aliases
 
     # Ask about ccx installation
-    echo ""
-    echo "📦 Multi-Provider Proxy (ccx)"
-    echo "================================"
-    echo "ccx allows you to switch between multiple AI providers in a single session:"
-    echo "  • OpenAI (GPT-4, GPT-4o, etc.)"
-    echo "  • OpenRouter (access to many models)"
-    echo "  • Google Gemini"
-    echo "  • Z.AI GLM models"
-    echo "  • Anthropic Claude"
-    echo ""
-    read -p "Install ccx? (Y/n): " install_ccx_choice
+    local install_ccx_choice="Y"
+    
+    if [ "$SKIP_CCX" = true ]; then
+        install_ccx_choice="n"
+        echo "ℹ️  Skipping ccx installation (--skip-ccx flag)"
+    elif [ "$INTERACTIVE" = true ]; then
+        echo ""
+        echo "📦 Multi-Provider Proxy (ccx)"
+        echo "================================"
+        echo "ccx allows you to switch between multiple AI providers in a single session:"
+        echo "  • OpenAI (GPT-4, GPT-4o, etc.)"
+        echo "  • OpenRouter (access to many models)"
+        echo "  • Google Gemini"
+        echo "  • Z.AI GLM models"
+        echo "  • Anthropic Claude"
+        echo ""
+        read -p "Install ccx? (Y/n): " install_ccx_choice
+    else
+        echo "ℹ️  Non-interactive mode: installing ccx by default (use --skip-ccx to skip)"
+    fi
 
     if [ "$install_ccx_choice" != "n" ] && [ "$install_ccx_choice" != "N" ]; then
         install_ccx
@@ -970,8 +1052,10 @@ handle_error() {
     # Give user time to read any final messages before stopping
     echo ""
     echo "Installation terminated due to error."
-    echo "Press Enter to finish (window will remain open)..."
-    read
+    if [ "$INTERACTIVE" = true ]; then
+        echo "Press Enter to finish (window will remain open)..."
+        read
+    fi
     # Return to stop script execution without closing terminal
     return
 }
@@ -996,10 +1080,12 @@ if [ "$TEST_ERROR" = true ]; then
     echo "✅ Test complete. If a browser window opened, error reporting is working!"
     echo ""
     echo "To run normal installation, use:"
-    echo "   curl -fsSL https://raw.githubusercontent.com/JoeInnsp23/claude-glm-wrapper/main/install.sh | bash"
+    echo "   curl -fsSL https://raw.githubusercontent.com/MohMaya/claude-glm-wrapper/main/install.sh | bash"
     echo ""
-    echo "Press Enter to finish (window will remain open)..."
-    read
+    if [ "$INTERACTIVE" = true ]; then
+        echo "Press Enter to finish (window will remain open)..."
+        read
+    fi
     # Script ends naturally here - terminal stays open
     exit 0
 fi
