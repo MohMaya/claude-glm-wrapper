@@ -28,7 +28,7 @@ fastify.get("/healthz", async () => ({
 
 // Status endpoint (shows current active provider/model)
 fastify.get("/_status", async () => {
-  return active ?? { provider: "glm", model: "glm-4.6" };
+  return active ?? { provider: "glm", model: "glm-4.7" };
 });
 
 // Main messages endpoint - routes by model prefix
