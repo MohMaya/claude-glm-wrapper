@@ -4,6 +4,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import tty from 'tty';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,6 +19,9 @@ console.log(`Detected OS: ${platform}\n`);
 
 function runInstaller() {
   let command, args, scriptPath;
+
+  // Check if running in interactive mode (TTY available)
+  const isInteractive = tty.isatty(0);
 
   if (platform === 'win32') {
     // Windows - run PowerShell installer
@@ -55,9 +59,10 @@ function runInstaller() {
     process.exit(1);
   }
 
-  // Spawn the installer process
+  // For interactive mode, we need to pass stdin through properly
+  // Use 'inherit' for all stdio to allow user interaction
   const installer = spawn(command, args, {
-    stdio: 'inherit',
+    stdio: ['inherit', 'inherit', 'inherit'],
     cwd: rootDir
   });
 
