@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- GLM-4.7 model support as new default
+- GLM-4.6 wrapper (ccg46) for backward compatibility
+
+### Changed
+- Updated default model from GLM-4.6 to GLM-4.7
+
 ## [1.0.3] - 2025-10-01
 
 ### Changed
