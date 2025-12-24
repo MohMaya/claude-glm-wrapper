@@ -77,7 +77,9 @@ GLM_CONFIG_DIR="$HOME/.claude-glm"
 GLM_46_CONFIG_DIR="$HOME/.claude-glm-46"
 GLM_45_CONFIG_DIR="$HOME/.claude-glm-45"
 GLM_FAST_CONFIG_DIR="$HOME/.claude-glm-fast"
+MINIMAX_CONFIG_DIR="$HOME/.claude-minimax"
 ZAI_API_KEY="YOUR_ZAI_API_KEY_HERE"
+MINIMAX_API_KEY="YOUR_MINIMAX_API_KEY_HERE"
 
 # Report installation errors to GitHub
 report_error() {
@@ -590,6 +592,58 @@ EOF
     echo "✅ Installed claude-glm-fast at $wrapper_path"
 }
 
+# Create the Minimax M2.1 wrapper
+create_claude_minimax_wrapper() {
+    local wrapper_path="$USER_BIN_DIR/claude-minimax"
+    
+    cat > "$wrapper_path" << EOF
+#!/bin/bash
+# Claude-Minimax - Claude Code with Minimax M2.1
+
+# Set Minimax environment variables
+export ANTHROPIC_BASE_URL="https://api.minimax.io/anthropic"
+export ANTHROPIC_AUTH_TOKEN="$MINIMAX_API_KEY"
+export ANTHROPIC_MODEL="MiniMax-M2.1"
+export ANTHROPIC_SMALL_FAST_MODEL="MiniMax-M2.1"
+
+# Use custom config directory to avoid conflicts
+export CLAUDE_HOME="\$HOME/.claude-minimax"
+
+# Create config directory if it doesn't exist
+mkdir -p "\$CLAUDE_HOME"
+
+# Create/update settings file with Minimax configuration
+cat > "\$CLAUDE_HOME/settings.json" << SETTINGS
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.minimax.io/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "$MINIMAX_API_KEY",
+    "ANTHROPIC_MODEL": "MiniMax-M2.1",
+    "ANTHROPIC_SMALL_FAST_MODEL": "MiniMax-M2.1"
+  }
+}
+SETTINGS
+
+# Launch Claude Code with custom config
+echo "🚀 Starting Claude Code with Minimax M2.1..."
+echo "📁 Config directory: \$CLAUDE_HOME"
+echo ""
+
+# Check if claude exists
+if ! command -v claude &> /dev/null; then
+    echo "❌ Error: 'claude' command not found!"
+    echo "Please ensure Claude Code is installed and in your PATH"
+    exit 1
+fi
+
+# Run the actual claude command
+claude "\$@"
+EOF
+    
+    chmod +x "$wrapper_path"
+    echo "✅ Installed claude-minimax at $wrapper_path"
+}
+
 # Create the Anthropic wrapper
 create_claude_anthropic_wrapper() {
     local wrapper_path="$USER_BIN_DIR/claude-anthropic"
@@ -797,14 +851,17 @@ create_shell_aliases() {
     fi
     
     # Remove old aliases if they exist
-    if grep -q "# Claude Code Model Switcher Aliases" "$rc_file" 2>/dev/null; then
+    if grep -q "# Claude Code Model Switcher Aliases" "$rc_file" 2>/dev/null || grep -q "# Claude Code Model Switcher Aliases (v" "$rc_file" 2>/dev/null; then
         # Use temp file for compatibility
         grep -v "# Claude Code Model Switcher Aliases" "$rc_file" | \
-        grep -v "alias cc=" | \
-        grep -v "alias ccg=" | \
-        grep -v "alias ccg46=" | \
-        grep -v "alias ccg45=" | \
-        grep -v "alias ccf=" > "$rc_file.tmp"
+        grep -v "^alias cc=" | \
+        grep -v "^alias ccg=" | \
+        grep -v "^alias ccg46=" | \
+        grep -v "^alias ccg45=" | \
+        grep -v "^alias ccf=" | \
+        grep -v "^alias ccm=" | \
+        grep -v "^alias glm=" | \
+        grep -v "# Claude Code Model Switcher Aliases (v" > "$rc_file.tmp"
         mv "$rc_file.tmp" "$rc_file"
     fi
     
@@ -812,26 +869,40 @@ create_shell_aliases() {
     if [[ "$rc_file" == *".cshrc" ]]; then
         cat >> "$rc_file" << 'EOF'
 
-# Claude Code Model Switcher Aliases
+# Claude Code Model Switcher Aliases (v2.1.0)
 alias cc 'claude'
 alias ccg 'claude-glm'
 alias ccg46 'claude-glm-4.6'
 alias ccg45 'claude-glm-4.5'
 alias ccf 'claude-glm-fast'
+alias ccm 'claude-minimax'
 EOF
     else
         cat >> "$rc_file" << 'EOF'
 
-# Claude Code Model Switcher Aliases
+# Claude Code Model Switcher Aliases (v2.1.0)
 alias cc='claude'
 alias ccg='claude-glm'
 alias ccg46='claude-glm-4.6'
 alias ccg45='claude-glm-4.5'
 alias ccf='claude-glm-fast'
+alias ccm='claude-minimax'
 EOF
     fi
     
     echo "✅ Added aliases to $rc_file"
+    
+    # Verify aliases were added
+    if ! grep -q "alias ccm=" "$rc_file" 2>/dev/null && ! grep -q "alias ccm " "$rc_file" 2>/dev/null; then
+        echo "⚠️  Warning: Aliases may not have been added correctly"
+        echo "   Please manually add these to $rc_file:"
+        echo "   alias ccm='claude-minimax'"
+        echo "   alias ccg46='claude-glm-4.6'"
+    elif ! grep -q "alias ccg46=" "$rc_file" 2>/dev/null && ! grep -q "alias ccg46 " "$rc_file" 2>/dev/null; then
+        echo "⚠️  Warning: ccg46 alias may not have been added correctly"
+        echo "   Please manually add this to $rc_file:"
+        echo "   alias ccg46='claude-glm-4.6'"
+    fi
 }
 
 # Check Claude Code availability
@@ -905,9 +976,14 @@ main() {
                         create_claude_glm_46_wrapper
                         create_claude_glm_45_wrapper
                         create_claude_glm_fast_wrapper
-                        echo "✅ API key updated!"
-                        exit 0
                     fi
+                    read -p "Enter your Minimax API key (or press Enter to skip): " minimax_key
+                    if [ -n "$minimax_key" ]; then
+                        MINIMAX_API_KEY="$minimax_key"
+                        create_claude_minimax_wrapper
+                    fi
+                    echo "✅ API key updated!"
+                    exit 0
                     ;;
                 2)
                     echo "Reinstalling..."
@@ -943,6 +1019,19 @@ main() {
             echo "   $USER_BIN_DIR/claude-glm-4.5"
             echo "   $USER_BIN_DIR/claude-glm-fast"
         fi
+        
+        # Prompt for Minimax API key
+        echo ""
+        echo "Enter your Minimax API key (from https://platform.minimax.io) - optional"
+        read -p "Minimax API Key (or press Enter to skip): " minimax_key
+        
+        if [ -n "$minimax_key" ]; then
+            MINIMAX_API_KEY="$minimax_key"
+            echo "✅ Minimax API key received (${#minimax_key} characters)"
+        else
+            echo "⚠️  No Minimax API key provided. You can add it later to:"
+            echo "   $USER_BIN_DIR/claude-minimax"
+        fi
     else
         echo "⚠️  Non-interactive mode: No API key provided."
         echo "   Use --api-key=YOUR_KEY or set ZAI_API_KEY_ENV environment variable."
@@ -954,6 +1043,12 @@ main() {
     create_claude_glm_46_wrapper
     create_claude_glm_45_wrapper
     create_claude_glm_fast_wrapper
+    
+    # Create Minimax wrapper if API key was provided
+    if [ "$MINIMAX_API_KEY" != "YOUR_MINIMAX_API_KEY_HERE" ] && [ -n "$MINIMAX_API_KEY" ]; then
+        create_claude_minimax_wrapper
+    fi
+    
     create_shell_aliases
 
     # Ask about ccx installation
@@ -971,6 +1066,7 @@ main() {
         echo "  • OpenRouter (access to many models)"
         echo "  • Google Gemini"
         echo "  • Z.AI GLM models"
+        echo "  • Minimax M2.1"
         echo "  • Anthropic Claude"
         echo ""
         read -p "Install ccx? (Y/n): " install_ccx_choice
@@ -1005,6 +1101,9 @@ main() {
     echo "   claude-glm-4.6  - GLM-4.6"
     echo "   claude-glm-4.5  - GLM-4.5"
     echo "   claude-glm-fast - GLM-4.5-Air (fast)"
+    if [ "$MINIMAX_API_KEY" != "YOUR_MINIMAX_API_KEY_HERE" ] && [ -n "$MINIMAX_API_KEY" ]; then
+        echo "   claude-minimax  - Minimax M2.1"
+    fi
     if [ "$install_ccx_choice" != "n" ] && [ "$install_ccx_choice" != "N" ]; then
         echo "   ccx             - Multi-provider proxy (switch models in-session)"
     fi
@@ -1015,22 +1114,34 @@ main() {
     echo "   ccg46 - claude-glm-4.6 (GLM-4.6)"
     echo "   ccg45 - claude-glm-4.5 (GLM-4.5)"
     echo "   ccf   - claude-glm-fast"
+    if [ "$MINIMAX_API_KEY" != "YOUR_MINIMAX_API_KEY_HERE" ] && [ -n "$MINIMAX_API_KEY" ]; then
+        echo "   ccm   - claude-minimax (Minimax M2.1)"
+    fi
     if [ "$install_ccx_choice" != "n" ] && [ "$install_ccx_choice" != "N" ]; then
         echo "   ccx   - Multi-provider proxy"
     fi
     echo ""
     
     if [ "$ZAI_API_KEY" = "YOUR_ZAI_API_KEY_HERE" ]; then
-        echo "⚠️  Don't forget to add your API key to:"
+        echo "⚠️  Don't forget to add your Z.AI API key to:"
         echo "   $USER_BIN_DIR/claude-glm"
         echo "   $USER_BIN_DIR/claude-glm-4.6"
         echo "   $USER_BIN_DIR/claude-glm-4.5"
         echo "   $USER_BIN_DIR/claude-glm-fast"
     fi
+    
+    if [ "$MINIMAX_API_KEY" = "YOUR_MINIMAX_API_KEY_HERE" ] || [ -z "$MINIMAX_API_KEY" ]; then
+        echo "⚠️  Don't forget to add your Minimax API key to:"
+        echo "   $USER_BIN_DIR/claude-minimax"
+    fi
 
     echo ""
     echo "📁 Installation location: $USER_BIN_DIR"
-    echo "📁 Config directories: ~/.claude-glm, ~/.claude-glm-46, ~/.claude-glm-45, ~/.claude-glm-fast"
+    local config_dirs="~/.claude-glm, ~/.claude-glm-46, ~/.claude-glm-45, ~/.claude-glm-fast"
+    if [ "$MINIMAX_API_KEY" != "YOUR_MINIMAX_API_KEY_HERE" ] && [ -n "$MINIMAX_API_KEY" ]; then
+        config_dirs="$config_dirs, ~/.claude-minimax"
+    fi
+    echo "📁 Config directories: $config_dirs"
 }
 
 # Error handler

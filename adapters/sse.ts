@@ -1,11 +1,11 @@
 // Server-Sent Events (SSE) utilities for Anthropic-style streaming
 import type { FastifyReply } from "fastify";
+// FastifyReply raw type is augmented in types.d.ts
 
 export function initSSE(res: FastifyReply) {
   res.raw.setHeader("Content-Type", "text/event-stream");
   res.raw.setHeader("Cache-Control", "no-cache, no-transform");
   res.raw.setHeader("Connection", "keep-alive");
-  // @ts-ignore
   res.raw.flushHeaders?.();
 }
 

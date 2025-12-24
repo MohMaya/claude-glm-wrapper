@@ -1,0 +1,70 @@
+# CI Workflow - Runs on all PRs and pushes to main
+# Validates: lint, type-check, build, and tests across Node LTS versions
+
+name: CI
+
+on:
+  pull_request:
+    branches: ['**']
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-npm
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: npm install --ignore-scripts
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: validate
+    if: always()
+    steps:
+      - name: Check validation status
+        run: |
+          if [ "${{ needs.validate.result }}" == "success" ]; then
+            echo "✅ All checks passed!"
+          else
+            echo "❌ CI failed. Please review the logs above."
+            exit 1
+          fi

@@ -37,6 +37,10 @@ GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 GLM_UPSTREAM_URL=https://api.z.ai/api/anthropic
 ZAI_API_KEY=
 
+# Minimax (optional - for minimax: routing)
+MINIMAX_UPSTREAM_URL=https://api.minimax.io/anthropic
+MINIMAX_API_KEY=
+
 # Anthropic (optional - for anthropic: routing)
 ANTHROPIC_UPSTREAM_URL=https://api.anthropic.com
 ANTHROPIC_API_KEY=
@@ -100,6 +104,7 @@ echo "  openai:<model>      - OpenAI models (gpt-4o, gpt-4o-mini, etc.)"
 echo "  openrouter:<model>  - OpenRouter models"
 echo "  gemini:<model>      - Google Gemini models"
 echo "  glm:<model>         - Z.AI GLM models (glm-4.7, glm-4.6, etc.)"
+echo "  minimax:<model>     - Minimax models (MiniMax-M2.1, etc.)"
 echo "  anthropic:<model>   - Anthropic Claude models"
 echo ""
 echo "💡 Switch models in-session with: /model <prefix>:<model-name>"

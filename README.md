@@ -50,6 +50,7 @@ ccg              # Claude Code with GLM-4.7 (latest)
 ccg46            # Claude Code with GLM-4.6
 ccg45            # Claude Code with GLM-4.5
 ccf              # Claude Code with GLM-4.5-Air (faster)
+ccm              # Claude Code with Minimax M2.1
 cc               # Regular Claude Code
 ```
 
@@ -80,8 +81,9 @@ iwr -useb https://raw.githubusercontent.com/MohMaya/claude-glm-wrapper/main/inst
 
 ## Features
 
-- 🚀 **Easy switching** between GLM and Claude models
+- 🚀 **Easy switching** between GLM, Minimax, and Claude models
 - ⚡ **Multiple GLM models**: GLM-4.7 (latest), GLM-4.6, GLM-4.5, and GLM-4.5-Air (fast)
+- 🤖 **Minimax M2.1**: Powerful coding model with enhanced reasoning capabilities
 - 🔒 **No sudo/admin required**: Installs to user's home directory
 - 🖥️ **Cross-platform**: Works on Windows, macOS, and Linux
 - 📁 **Isolated configs**: Each model uses its own config directory — no conflicts!
@@ -92,6 +94,7 @@ iwr -useb https://raw.githubusercontent.com/MohMaya/claude-glm-wrapper/main/inst
 1. **Node.js** (v14+): For npx installation - [nodejs.org](https://nodejs.org/)
 2. **Claude Code**: Install from [anthropic.com/claude-code](https://www.anthropic.com/claude-code)
 3. **Z.AI API Key**: Get your free key from [z.ai/manage-apikey/apikey-list](https://z.ai/manage-apikey/apikey-list)
+4. **Minimax API Key** (optional): Get your key from [platform.minimax.io](https://platform.minimax.io) - required only if you want to use Minimax M2.1
 
 *Note: If you don't have Node.js, you can use the platform-specific installers (see Quick Start above)*
 
@@ -110,6 +113,7 @@ The installer will:
 - Auto-detect your operating system
 - Check if Claude Code is installed
 - Ask for your Z.AI API key
+- Ask for your Minimax API key (optional)
 - Create platform-appropriate wrapper scripts
 - Add convenient aliases to your shell/profile
 
@@ -186,6 +190,7 @@ The installer creates these commands and aliases:
 | `ccg46` | `claude-glm-4.6` | GLM-4.6 | Previous version of GLM |
 | `ccg45` | `claude-glm-4.5` | GLM-4.5 | Legacy version of GLM |
 | `ccf` | `claude-glm-fast` | GLM-4.5-Air (fast) | Quicker responses, lower cost |
+| `ccm` | `claude-minimax` | Minimax M2.1 | Powerful coding model with enhanced reasoning |
 | `ccx` | `ccx` | Multi-provider proxy | Switch between providers in-session |
 
 **💡 Tip**: Use the short aliases! They're faster to type and easier to remember.
@@ -198,6 +203,7 @@ The `ccx` command starts a local proxy that lets you switch between multiple AI 
 - **OpenRouter**: Access to hundreds of models
 - **Google Gemini**: Gemini 1.5 Pro and Flash
 - **Z.AI GLM**: GLM-4.7, GLM-4.6, GLM-4.5, GLM-4.5-Air
+- **Minimax**: MiniMax-M2.1, MiniMax-M2.1-lightning, MiniMax-M2
 - **Anthropic**: Claude 3.5 Sonnet, etc.
 
 Switch models mid-session using `/model <provider>:<model-name>`. Perfect for comparing responses or using the right model for each task!
@@ -240,6 +246,13 @@ ccf
 # Opens Claude Code using GLM-4.5-Air
 ```
 
+**Use Minimax M2.1:**
+
+```bash
+ccm
+# Opens Claude Code using Minimax M2.1
+```
+
 **Use regular Claude:**
 
 ```bash
@@ -253,6 +266,7 @@ cc
 ccg --help
 ccg "refactor this function"
 ccf "quick question about Python"
+ccm "explain this algorithm"
 ```
 
 ## Common Workflows
@@ -332,6 +346,10 @@ GEMINI_API_KEY=AIza...
 GLM_UPSTREAM_URL=https://api.z.ai/api/anthropic
 ZAI_API_KEY=...
 
+# Minimax
+MINIMAX_UPSTREAM_URL=https://api.minimax.io/anthropic
+MINIMAX_API_KEY=...
+
 # Anthropic (if you want to route through the proxy)
 ANTHROPIC_UPSTREAM_URL=https://api.anthropic.com
 ANTHROPIC_API_KEY=sk-ant-...
@@ -359,6 +377,9 @@ Use Claude Code's built-in `/model` command with provider prefixes:
 /model glm:glm-4.7
 /model glm:glm-4.6
 /model glm:glm-4.5
+/model minimax:MiniMax-M2.1
+/model minimax:MiniMax-M2.1-lightning
+/model minimax:MiniMax-M2
 /model anthropic:claude-3-5-sonnet-20241022
 ```
 
@@ -433,6 +454,7 @@ Each wrapper uses its own configuration directory to prevent conflicts:
 | `claude-glm-4.6` | `~/.claude-glm-46/` | GLM-4.6 settings and history |
 | `claude-glm-4.5` | `~/.claude-glm-45/` | GLM-4.5 settings and history |
 | `claude-glm-fast` | `~/.claude-glm-fast/` | GLM-4.5-Air settings and history |
+| `claude-minimax` | `~/.claude-minimax/` | Minimax M2.1 settings and history |
 | `claude` | `~/.claude/` (default) | Your original Claude setup |
 
 **Windows:**
@@ -443,6 +465,7 @@ Each wrapper uses its own configuration directory to prevent conflicts:
 | `claude-glm-4.6` | `%USERPROFILE%\.claude-glm-46\` | GLM-4.6 settings and history |
 | `claude-glm-4.5` | `%USERPROFILE%\.claude-glm-45\` | GLM-4.5 settings and history |
 | `claude-glm-fast` | `%USERPROFILE%\.claude-glm-fast\` | GLM-4.5-Air settings and history |
+| `claude-minimax` | `%USERPROFILE%\.claude-minimax\` | Minimax M2.1 settings and history |
 | `claude` | `%USERPROFILE%\.claude\` (default) | Your original Claude setup |
 
 **This means:**
@@ -459,6 +482,7 @@ Each wrapper uses its own configuration directory to prevent conflicts:
 - `claude-glm-4.6` (GLM-4.6)
 - `claude-glm-4.5` (GLM-4.5)
 - `claude-glm-fast` (GLM-4.5-Air)
+- `claude-minimax` (Minimax M2.1)
 
 **Windows:** `%USERPROFILE%\.local\bin\`
 
@@ -466,6 +490,7 @@ Each wrapper uses its own configuration directory to prevent conflicts:
 - `claude-glm-4.6.ps1` (GLM-4.6)
 - `claude-glm-4.5.ps1` (GLM-4.5)
 - `claude-glm-fast.ps1` (GLM-4.5-Air)
+- `claude-minimax.ps1` (Minimax M2.1)
 
 These are just tiny wrapper scripts (bash or PowerShell) that set the right environment variables before launching Claude Code.
 
@@ -487,6 +512,7 @@ nano ~/.local/bin/claude-glm
 nano ~/.local/bin/claude-glm-4.6
 nano ~/.local/bin/claude-glm-4.5
 nano ~/.local/bin/claude-glm-fast
+nano ~/.local/bin/claude-minimax
 # Find and replace ANTHROPIC_AUTH_TOKEN value
 ```
 
@@ -507,7 +533,8 @@ notepad "$env:USERPROFILE\.local\bin\claude-glm.ps1"
 notepad "$env:USERPROFILE\.local\bin\claude-glm-4.6.ps1"
 notepad "$env:USERPROFILE\.local\bin\claude-glm-4.5.ps1"
 notepad "$env:USERPROFILE\.local\bin\claude-glm-fast.ps1"
-# Find and replace $ZaiApiKey value
+notepad "$env:USERPROFILE\.local\bin\claude-minimax.ps1"
+# Find and replace $ZaiApiKey or $MinimaxApiKey value
 ```
 
 ## How It Works (Technical Details)
@@ -516,9 +543,9 @@ The wrapper scripts work by setting environment variables before launching Claud
 
 | Environment Variable | What It Does |
 |---------------------|--------------|
-| `ANTHROPIC_BASE_URL` | Points to Z.AI's API endpoint |
-| `ANTHROPIC_AUTH_TOKEN` | Your Z.AI API key |
-| `ANTHROPIC_MODEL` | Which model to use (glm-4.7, glm-4.6, glm-4.5, or glm-4.5-air) |
+| `ANTHROPIC_BASE_URL` | Points to API endpoint (Z.AI, Minimax, or Anthropic) |
+| `ANTHROPIC_AUTH_TOKEN` | Your API key (Z.AI, Minimax, or Anthropic) |
+| `ANTHROPIC_MODEL` | Which model to use (glm-4.7, glm-4.6, glm-4.5, glm-4.5-air, or MiniMax-M2.1) |
 | `CLAUDE_HOME` | Where to store config files |
 
 Claude Code reads these variables and uses them instead of the defaults. Simple! 🎯
@@ -640,6 +667,7 @@ rm ~/.local/bin/claude-glm
 rm ~/.local/bin/claude-glm-4.6
 rm ~/.local/bin/claude-glm-4.5
 rm ~/.local/bin/claude-glm-fast
+rm ~/.local/bin/claude-minimax
 ```
 
 **Remove config directories** (optional - deletes chat history):
@@ -649,6 +677,7 @@ rm -rf ~/.claude-glm
 rm -rf ~/.claude-glm-46
 rm -rf ~/.claude-glm-45
 rm -rf ~/.claude-glm-fast
+rm -rf ~/.claude-minimax
 ```
 
 **Remove aliases** from `~/.zshrc` or `~/.bashrc`:
@@ -661,6 +690,7 @@ alias ccg='claude-glm'
 alias ccg46='claude-glm-4.6'
 alias ccg45='claude-glm-4.5'
 alias ccf='claude-glm-fast'
+alias ccm='claude-minimax'
 ```
 
 Then run: `source ~/.zshrc`
@@ -674,6 +704,7 @@ Remove-Item "$env:USERPROFILE\.local\bin\claude-glm.ps1"
 Remove-Item "$env:USERPROFILE\.local\bin\claude-glm-4.6.ps1"
 Remove-Item "$env:USERPROFILE\.local\bin\claude-glm-4.5.ps1"
 Remove-Item "$env:USERPROFILE\.local\bin\claude-glm-fast.ps1"
+Remove-Item "$env:USERPROFILE\.local\bin\claude-minimax.ps1"
 ```
 
 **Remove config directories** (optional - deletes chat history):
@@ -683,6 +714,7 @@ Remove-Item -Recurse "$env:USERPROFILE\.claude-glm"
 Remove-Item -Recurse "$env:USERPROFILE\.claude-glm-46"
 Remove-Item -Recurse "$env:USERPROFILE\.claude-glm-45"
 Remove-Item -Recurse "$env:USERPROFILE\.claude-glm-fast"
+Remove-Item -Recurse "$env:USERPROFILE\.claude-minimax"
 ```
 
 **Remove aliases** from PowerShell profile:
@@ -696,6 +728,7 @@ Set-Alias ccg claude-glm
 Set-Alias ccg46 claude-glm-4.6
 Set-Alias ccg45 claude-glm-4.5
 Set-Alias ccf claude-glm-fast
+Set-Alias ccm claude-minimax
 ```
 
 Then reload: `. $PROFILE`
@@ -714,7 +747,7 @@ Then reload: `. $PROFILE`
 
 **A**:
 
-- **Use ccx** if you want to switch between multiple providers (OpenAI, Gemini, OpenRouter, GLM, Anthropic) in the same session
+- **Use ccx** if you want to switch between multiple providers (OpenAI, Gemini, OpenRouter, GLM, Minimax, Anthropic) in the same session
 - **Use dedicated wrappers** if you want separate chat histories for different models/providers
 
 ### Q: Which model should I use?
@@ -722,10 +755,11 @@ Then reload: `. $PROFILE`
 **A**:
 
 - Use **`ccx`** for: Maximum flexibility, model comparison, leveraging different model strengths
-- Use **`ccg` (GLM-4.7)** for: Latest model, complex coding, refactoring, detailed explanations
-- Use **`ccg46` (GLM-4.6)** for: Previous version, if you need consistency with older projects
-- Use **`ccg45` (GLM-4.5)** for: Legacy version, if you need consistency with older projects
+- Use **`ccg` (GLM-4.7)** for: Latest GLM model, complex coding, refactoring, detailed explanations
+- Use **`ccg46` (GLM-4.6)** for: Previous GLM version, if you need consistency with older projects
+- Use **`ccg45` (GLM-4.5)** for: Legacy GLM version, if you need consistency with older projects
 - Use **`ccf` (GLM-4.5-Air)** for: Quick questions, simple tasks, faster responses
+- Use **`ccm` (Minimax M2.1)** for: Powerful coding model with enhanced reasoning, polyglot programming mastery
 - Use **`cc` (Claude)** for: Your regular Anthropic Claude setup
 
 ### Q: How do I switch models in ccx?
@@ -736,6 +770,8 @@ Then reload: `. $PROFILE`
 - `/model gemini:gemini-1.5-pro`
 - `/model glm:glm-4.7`
 - `/model glm:glm-4.6`
+- `/model minimax:MiniMax-M2.1`
+- `/model minimax:MiniMax-M2.1-lightning`
 
 ### Q: Is this secure?
 

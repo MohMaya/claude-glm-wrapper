@@ -1,7 +1,7 @@
 // Provider parsing and message mapping utilities
 import { AnthropicMessage, AnthropicRequest, ProviderKey, ProviderModel } from "./types.js";
 
-const PROVIDER_PREFIXES: ProviderKey[] = ["openai", "openrouter", "gemini", "glm", "anthropic"];
+const PROVIDER_PREFIXES: ProviderKey[] = ["openai", "openrouter", "gemini", "glm", "anthropic", "minimax"];
 
 /**
  * Parse provider and model from the model field
@@ -36,8 +36,8 @@ export function parseProviderModel(modelField: string, defaults?: ProviderModel)
  */
 export function warnIfTools(req: AnthropicRequest, provider: ProviderKey): void {
   if (req.tools && req.tools.length > 0) {
-    // Only GLM and Anthropic support tools natively
-    if (provider !== "glm" && provider !== "anthropic") {
+    // Only GLM, Anthropic, and Minimax support tools natively
+    if (provider !== "glm" && provider !== "anthropic" && provider !== "minimax") {
       console.warn(`[proxy] Warning: ${provider} may not fully support Anthropic-style tools. Passing through anyway.`);
     }
   }
