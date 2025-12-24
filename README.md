@@ -5,7 +5,7 @@
 > This is an actively maintained community fork of the original [claude-glm-wrapper](https://github.com/JoeInnsp23/claude-glm-wrapper). 
 > Now rewritten in **Bun** for 10x speed and single-binary simplicity.
 > 
-> Install via: `bunx claude-glm-wrapper` or download the binary.
+> Install via: `bunx cc-x10ded` or download the binary.
 
 ---
 
@@ -27,7 +27,7 @@ Use [Z.AI's GLM models](https://z.ai), [Minimax](https://minimax.io), [OpenAI](h
 
 **If you have Bun:**
 ```bash
-bunx claude-glm-wrapper setup
+bunx cc-x10ded setup
 ```
 
 **Manual Download (Mac/Linux/Windows):**

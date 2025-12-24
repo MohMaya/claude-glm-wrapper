@@ -1,6 +1,6 @@
 # Contributing to Claude-GLM Wrapper
 
-Thank you for your interest in contributing to the **Bun-based** version of Claude-GLM Wrapper!
+Thank you for your interest in contributing to the **Bun-based** version of cc-x10ded!
 
 ## Development Setup
 

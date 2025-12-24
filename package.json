@@ -1,5 +1,5 @@
 {
-  "name": "claude-glm-wrapper",
+  "name": "cc-x10ded",
   "version": "3.0.0",
   "description": "Cross-platform wrapper for Claude Code with Z.AI GLM models (Bun Edition)",
   "type": "module",
