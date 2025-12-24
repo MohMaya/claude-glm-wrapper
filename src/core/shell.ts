@@ -83,34 +83,40 @@ export class ShellIntegrator {
   }
 
   private generateAliasBlock(shell: ShellType): string {
+    // Use bunx for zero-install experience
+    const cmd = "bunx cc-x10ded";
+
     if (shell === "zsh" || shell === "bash") {
       return `
-alias cc='ccx'
-alias ccg='ccx --model=glm-4.7'
-alias ccg46='ccx --model=glm-4.6'
-alias ccg45='ccx --model=glm-4.5'
-alias ccf='ccx --model=glm-4.5-air'
-alias ccm='ccx --model=MiniMax-M2.1'
+alias ccx='${cmd}'
+alias cc='${cmd}'
+alias ccg='${cmd} --model=glm-4.7'
+alias ccg46='${cmd} --model=glm-4.6'
+alias ccg45='${cmd} --model=glm-4.5'
+alias ccf='${cmd} --model=glm-4.5-air'
+alias ccm='${cmd} --model=MiniMax-M2.1'
 `.trim();
     }
     if (shell === "fish") {
        return `
-alias cc 'ccx'
-alias ccg 'ccx --model=glm-4.7'
-alias ccg46 'ccx --model=glm-4.6'
-alias ccg45 'ccx --model=glm-4.5'
-alias ccf 'ccx --model=glm-4.5-air'
-alias ccm 'ccx --model=MiniMax-M2.1'
+alias ccx '${cmd}'
+alias cc '${cmd}'
+alias ccg '${cmd} --model=glm-4.7'
+alias ccg46 '${cmd} --model=glm-4.6'
+alias ccg45 '${cmd} --model=glm-4.5'
+alias ccf '${cmd} --model=glm-4.5-air'
+alias ccm '${cmd} --model=MiniMax-M2.1'
 `.trim();
     }
     if (shell === "powershell") {
         return `
-Function cc { ccx @args }
-Function ccg { ccx --model=glm-4.7 @args }
-Function ccg46 { ccx --model=glm-4.6 @args }
-Function ccg45 { ccx --model=glm-4.5 @args }
-Function ccf { ccx --model=glm-4.5-air @args }
-Function ccm { ccx --model=MiniMax-M2.1 @args }
+Function ccx { ${cmd} @args }
+Function cc { ${cmd} @args }
+Function ccg { ${cmd} --model=glm-4.7 @args }
+Function ccg46 { ${cmd} --model=glm-4.6 @args }
+Function ccg45 { ${cmd} --model=glm-4.5 @args }
+Function ccf { ${cmd} --model=glm-4.5-air @args }
+Function ccm { ${cmd} --model=MiniMax-M2.1 @args }
 `.trim();
     }
     return "";
