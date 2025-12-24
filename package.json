@@ -1,7 +1,11 @@
 {
   "name": "cc-x10ded",
-  "version": "3.0.8",
-  "description": "Cross-platform wrapper for Claude Code with Z.AI GLM models (Bun Edition)",
+  "version": "3.0.9",
+  "description": "Extend Claude Code with custom OpenAI-compatible model providers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MohMaya/claude-glm-wrapper"
+  },
   "type": "module",
   "bin": {
     "ccx": "./src/index.ts"
