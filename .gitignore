@@ -39,23 +39,10 @@ logs/
 .env.local
 .env.*.local
 
-# Personal test scripts
-test-*.sh
-personal-*
-
-# Claude directories (should not be committed)
-.claude/
-.claude-glm/
-.claude-glm-fast/
-
-# Internal development documentation
-DEVELOPMENT.md
-PR_DESCRIPTION.md
-
-# Node.js
+# Bun
 node_modules/
-package-lock.json
+bun.lockb
 
-# TypeScript build output
+# Build output
 dist/
-*.tsbuildinfo
+release/

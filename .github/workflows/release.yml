@@ -1,6 +1,5 @@
-# CD Workflow - Publishes to npm when version tags are pushed to main
-# Uses Trusted Publishing (OIDC) - No NPM_TOKEN secret required!
-# Usage: git tag v2.2.0 && git push origin v2.2.0
+# CD Workflow - Builds binaries and publishes to GitHub Releases
+# Publishes cross-platform binaries (Linux, macOS, Windows)
 
 name: Release
 
@@ -10,62 +9,58 @@ on:
       - 'v*.*.*'
 
 permissions:
-  contents: write  # Required for creating GitHub releases
-  id-token: write  # Required for OIDC/Trusted Publishing
+  contents: write
 
 jobs:
-  publish:
-    name: Publish to npm
+  build-and-release:
+    name: Build & Release
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 20
-
-      - name: Upgrade npm to 11.5.1+ for OIDC
-        run: npm install -g npm@latest
-
-      - name: Verify npm version
-        run: |
-          echo "npm version:"
-          npm --version
-          echo "Checking version is 11.5.1 or higher..."
-          NPM_VERSION=$(npm --version | cut -d. -f1)
-          if [ "$NPM_VERSION" -lt 11 ]; then
-            echo "ERROR: npm version must be 11.5.1+ for OIDC"
-            exit 1
-          fi
-          echo "npm version is compatible with OIDC"
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: bun install
 
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Type check
-        run: npx tsc --noEmit
-
-      - name: Build
-        run: npm run build
-
-      - name: Run tests
-        run: npm test
-
-      - name: Publish to npm with provenance
-        run: npm publish --provenance
-        # No NODE_AUTH_TOKEN needed - OIDC token is automatically used
+      - name: Build Binaries
+        run: |
+          mkdir -p release
+          bun run build:linux
+          bun run build:darwin
+          bun run build:windows
+          mv dist/ccx-linux release/ccx-linux-x64
+          mv dist/ccx-darwin release/ccx-macos-arm64
+          mv dist/ccx.exe release/ccx-windows-x64.exe
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          files: |
+            release/ccx-linux-x64
+            release/ccx-macos-arm64
+            release/ccx-windows-x64.exe
           body: |
             ## Changes in ${{ github.ref_name }}
+            
+            ### Installation
+            
+            **macOS / Linux:**
+            ```bash
+            curl -fsSL https://github.com/MohMaya/claude-glm-wrapper/releases/download/${{ github.ref_name }}/ccx-macos-arm64 -o ccx && chmod +x ccx
+            ./ccx setup
+            ```
+            
+            **Windows:**
+            Download `ccx-windows-x64.exe` and run:
+            ```powershell
+            .\ccx-windows-x64.exe setup
+            ```
 
             See [CHANGELOG.md](https://github.com/MohMaya/claude-glm-wrapper/blob/main/CHANGELOG.md) for details.
         env:
