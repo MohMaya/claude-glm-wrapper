@@ -26,7 +26,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # No registry-url needed - OIDC handles authentication
+          # Upgrade npm to 11.5.1+ for OIDC/Trusted Publishing
+          npm-version: latest
+
+      - name: Verify npm version
+        run: npm --version
 
       - name: Install dependencies
         run: npm install --ignore-scripts
