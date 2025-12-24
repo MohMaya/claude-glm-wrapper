@@ -31,7 +31,9 @@ $GlmConfigDir = "$env:USERPROFILE\.claude-glm"
 $Glm46ConfigDir = "$env:USERPROFILE\.claude-glm-46"
 $Glm45ConfigDir = "$env:USERPROFILE\.claude-glm-45"
 $GlmFastConfigDir = "$env:USERPROFILE\.claude-glm-fast"
+$MinimaxConfigDir = "$env:USERPROFILE\.claude-minimax"
 $ZaiApiKey = "YOUR_ZAI_API_KEY_HERE"
+$MinimaxApiKey = "YOUR_MINIMAX_API_KEY_HERE"
 
 # Debug logging
 function Write-DebugLog {
@@ -196,7 +198,8 @@ function Add-PowerShellAliases {
         $_ -notmatch "Set-Alias ccg " -and
         $_ -notmatch "Set-Alias ccg46 " -and
         $_ -notmatch "Set-Alias ccg45 " -and
-        $_ -notmatch "Set-Alias ccf "
+        $_ -notmatch "Set-Alias ccf " -and
+        $_ -notmatch "Set-Alias ccm "
     }
 
     # Add new aliases
@@ -208,6 +211,7 @@ Set-Alias ccg claude-glm
 Set-Alias ccg46 claude-glm-4.6
 Set-Alias ccg45 claude-glm-4.5
 Set-Alias ccf claude-glm-fast
+Set-Alias ccm claude-minimax
 "@
 
     $newContent = $filteredContent + $aliases
@@ -400,6 +404,52 @@ function New-ClaudeGlmFastWrapper {
     Write-Host "OK: Installed claude-glm-fast at $wrapperPath" -ForegroundColor Green
 }
 
+# Create the Minimax M2.1 wrapper
+function New-ClaudeMinimaxWrapper {
+    $wrapperPath = Join-Path $UserBinDir "claude-minimax.ps1"
+
+    # Build wrapper content using array and join to avoid nested here-strings
+    $wrapperContent = @(
+        '# Claude-Minimax - Claude Code with Minimax M2.1',
+        '',
+        '# Set Minimax environment variables',
+        '$env:ANTHROPIC_BASE_URL = "https://api.minimax.io/anthropic"',
+        "`$env:ANTHROPIC_AUTH_TOKEN = `"$MinimaxApiKey`"",
+        '$env:ANTHROPIC_MODEL = "MiniMax-M2.1"',
+        '$env:ANTHROPIC_SMALL_FAST_MODEL = "MiniMax-M2.1"',
+        '',
+        '# Use custom config directory to avoid conflicts',
+        "`$env:CLAUDE_HOME = `"$MinimaxConfigDir`"",
+        '',
+        '# Create config directory if it doesn''t exist',
+        'if (-not (Test-Path $env:CLAUDE_HOME)) {',
+        '    New-Item -ItemType Directory -Path $env:CLAUDE_HOME -Force | Out-Null',
+        '}',
+        '',
+        '# Create/update settings file with Minimax configuration',
+        '$settingsJson = "{`"env`":{`"ANTHROPIC_BASE_URL`":`"https://api.minimax.io/anthropic`",`"ANTHROPIC_AUTH_TOKEN`":`"' + $MinimaxApiKey + '`",`"ANTHROPIC_MODEL`":`"MiniMax-M2.1`",`"ANTHROPIC_SMALL_FAST_MODEL`":`"MiniMax-M2.1`"}}"',
+        'Set-Content -Path (Join-Path $env:CLAUDE_HOME "settings.json") -Value $settingsJson',
+        '',
+        '# Launch Claude Code with custom config',
+        'Write-Host "LAUNCH: Starting Claude Code with Minimax M2.1..."',
+        'Write-Host "CONFIG: Config directory: $env:CLAUDE_HOME"',
+        'Write-Host ""',
+        '',
+        '# Check if claude exists',
+        'if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {',
+        '    Write-Host "ERROR: ''claude'' command not found!"',
+        '    Write-Host "Please ensure Claude Code is installed and in your PATH"',
+        '    exit 1',
+        '}',
+        '',
+        '# Run the actual claude command',
+        '& claude $args'
+    ) -join "`n"
+
+    Set-Content -Path $wrapperPath -Value $wrapperContent
+    Write-Host "OK: Installed claude-minimax at $wrapperPath" -ForegroundColor Green
+}
+
 # Install ccx multi-provider proxy
 function Install-Ccx {
     Write-Host "INSTALL: Installing ccx (multi-provider proxy)..." -ForegroundColor Cyan
@@ -469,6 +519,10 @@ GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 # Z.AI GLM (optional)
 GLM_UPSTREAM_URL=https://api.z.ai/api/anthropic
 ZAI_API_KEY=
+
+# Minimax (optional - for minimax: routing)
+MINIMAX_UPSTREAM_URL=https://api.minimax.io/anthropic
+MINIMAX_API_KEY=
 
 # Anthropic (optional)
 ANTHROPIC_UPSTREAM_URL=https://api.anthropic.com
@@ -549,6 +603,7 @@ Write-Host "  openai:<model>      - OpenAI models (gpt-4o, gpt-4o-mini, etc.)"
 Write-Host "  openrouter:<model>  - OpenRouter models"
 Write-Host "  gemini:<model>      - Google Gemini models"
 Write-Host "  glm:<model>         - Z.AI GLM models (glm-4.7, glm-4.6, etc.)"
+Write-Host "  minimax:<model>     - Minimax models (MiniMax-M2.1, etc.)"
 Write-Host "  anthropic:<model>   - Anthropic Claude models"
 Write-Host ""
 Write-Host "TIP: Switch models in-session with: /model <prefix>:<model-name>"
@@ -850,9 +905,14 @@ function Install-ClaudeGlm {
                     New-ClaudeGlm46Wrapper
                     New-ClaudeGlm45Wrapper
                     New-ClaudeGlmFastWrapper
-                    Write-Host "OK: API key updated!"
-                    exit 0
                 }
+                $minimaxKey = Read-Host "Enter your Minimax API key (or press Enter to skip)"
+                if ($minimaxKey) {
+                    $script:MinimaxApiKey = $minimaxKey
+                    New-ClaudeMinimaxWrapper
+                }
+                Write-Host "OK: API key updated!"
+                exit 0
             }
             "2" {
                 Write-Host "Reinstalling..."
@@ -880,11 +940,31 @@ function Install-ClaudeGlm {
         Write-Host "   $UserBinDir\claude-glm-fast.ps1"
     }
 
+    # Prompt for Minimax API key
+    Write-Host ""
+    Write-Host "Enter your Minimax API key (from https://platform.minimax.io) - optional"
+    $minimaxKey = Read-Host "Minimax API Key (or press Enter to skip)"
+
+    if ($minimaxKey) {
+        $script:MinimaxApiKey = $minimaxKey
+        $minimaxKeyLength = $minimaxKey.Length
+        Write-Host "OK: Minimax API key received ($minimaxKeyLength characters)"
+    } else {
+        Write-Host "WARNING: No Minimax API key provided. You can add it later to:"
+        Write-Host "   $UserBinDir\claude-minimax.ps1"
+    }
+
     # Create wrappers
     New-ClaudeGlmWrapper
     New-ClaudeGlm46Wrapper
     New-ClaudeGlm45Wrapper
     New-ClaudeGlmFastWrapper
+    
+    # Create Minimax wrapper if API key was provided
+    if ($script:MinimaxApiKey -ne "YOUR_MINIMAX_API_KEY_HERE" -and $script:MinimaxApiKey) {
+        New-ClaudeMinimaxWrapper
+    }
+    
     Add-PowerShellAliases
 
     # Ask about ccx installation
@@ -896,6 +976,7 @@ function Install-ClaudeGlm {
     Write-Host "  • OpenRouter (access to many models)"
     Write-Host "  • Google Gemini"
     Write-Host "  • Z.AI GLM models"
+    Write-Host "  • Minimax M2.1"
     Write-Host "  • Anthropic Claude"
     Write-Host ""
     $installCcxChoice = Read-Host "Install ccx? (Y/n)"
@@ -927,6 +1008,9 @@ function Install-ClaudeGlm {
     Write-Host "   claude-glm-4.6  - GLM-4.6"
     Write-Host "   claude-glm-4.5  - GLM-4.5"
     Write-Host "   claude-glm-fast - GLM-4.5-Air (fast)"
+    if ($script:MinimaxApiKey -ne "YOUR_MINIMAX_API_KEY_HERE" -and $script:MinimaxApiKey) {
+        Write-Host "   claude-minimax  - Minimax M2.1"
+    }
     if ($ccxInstalled) {
         Write-Host "   ccx             - Multi-provider proxy (switch models in-session)"
     }
@@ -937,22 +1021,34 @@ function Install-ClaudeGlm {
     Write-Host "   ccg46 - claude-glm-4.6 (GLM-4.6)"
     Write-Host "   ccg45 - claude-glm-4.5 (GLM-4.5)"
     Write-Host "   ccf   - claude-glm-fast"
+    if ($script:MinimaxApiKey -ne "YOUR_MINIMAX_API_KEY_HERE" -and $script:MinimaxApiKey) {
+        Write-Host "   ccm   - claude-minimax (Minimax M2.1)"
+    }
     if ($ccxInstalled) {
         Write-Host "   ccx   - Multi-provider proxy"
     }
     Write-Host ""
 
     if ($ZaiApiKey -eq "YOUR_ZAI_API_KEY_HERE") {
-        Write-Host "WARNING: Do not forget to add your API key to:"
+        Write-Host "WARNING: Do not forget to add your Z.AI API key to:"
         Write-Host "   $UserBinDir\claude-glm.ps1"
         Write-Host "   $UserBinDir\claude-glm-4.6.ps1"
         Write-Host "   $UserBinDir\claude-glm-4.5.ps1"
         Write-Host "   $UserBinDir\claude-glm-fast.ps1"
     }
+    
+    if ($script:MinimaxApiKey -eq "YOUR_MINIMAX_API_KEY_HERE" -or -not $script:MinimaxApiKey) {
+        Write-Host "WARNING: Do not forget to add your Minimax API key to:"
+        Write-Host "   $UserBinDir\claude-minimax.ps1"
+    }
 
     Write-Host ""
     Write-Host "LOCATION: Installation location: $UserBinDir"
-    Write-Host "LOCATION: Config directories: $GlmConfigDir, $Glm46ConfigDir, $Glm45ConfigDir, $GlmFastConfigDir"
+    $configDirs = "$GlmConfigDir, $Glm46ConfigDir, $Glm45ConfigDir, $GlmFastConfigDir"
+    if ($script:MinimaxApiKey -ne "YOUR_MINIMAX_API_KEY_HERE" -and $script:MinimaxApiKey) {
+        $configDirs = "$configDirs, $MinimaxConfigDir"
+    }
+    Write-Host "LOCATION: Config directories: $configDirs"
 }
 
 # Test error functionality if requested

@@ -107,6 +107,29 @@ fastify.post("/v1/messages", async (req, res) => {
       });
     }
 
+    if (provider === "minimax") {
+      const minimaxBase = process.env.MINIMAX_UPSTREAM_URL || "https://api.minimax.io/anthropic";
+      const minimaxKey = process.env.MINIMAX_API_KEY;
+      if (!minimaxKey) {
+        throw apiError(
+          500,
+          "MINIMAX_API_KEY not set in ~/.claude-proxy/.env. Run: ccx --setup"
+        );
+      }
+      // Don't set headers here - passThrough will do it after validation
+      return passThrough({
+        res,
+        body,
+        model,
+        baseUrl: minimaxBase,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${minimaxKey}`,
+          "anthropic-version": process.env.ANTHROPIC_VERSION || "2023-06-01"
+        }
+      });
+    }
+
     // Default: glm (Z.AI)
     const glmBase = process.env.GLM_UPSTREAM_URL;
     const glmKey = process.env.ZAI_API_KEY || process.env.GLM_API_KEY;
