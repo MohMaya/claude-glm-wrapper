@@ -3,6 +3,7 @@ import { FastifyReply } from "fastify";
 import { createParser } from "eventsource-parser";
 import { deltaText, startAnthropicMessage, stopAnthropicMessage } from "../sse.js";
 import { toOpenAIMessages } from "../map.js";
+import { withStatus, safeText } from "../utils.js";
 import type { AnthropicRequest } from "../types.js";
 
 const OR_BASE = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
@@ -80,19 +81,4 @@ export async function chatOpenRouter(
   }
 
   stopAnthropicMessage(res);
-}
-
-function withStatus(status: number, message: string) {
-  const e = new Error(message);
-  // @ts-ignore
-  e.statusCode = status;
-  return e;
-}
-
-async function safeText(resp: Response) {
-  try {
-    return await resp.text();
-  } catch {
-    return "<no-body>";
-  }
 }

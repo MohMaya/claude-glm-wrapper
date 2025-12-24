@@ -1,11 +1,22 @@
 // Server-Sent Events (SSE) utilities for Anthropic-style streaming
 import type { FastifyReply } from "fastify";
 
+// Extend FastifyReply with flushHeaders (not in default types but works)
+declare module "fastify" {
+  interface FastifyReply {
+    raw: {
+      setHeader(name: string, value: string): void;
+      write(chunk: Uint8Array | string): boolean;
+      end(): void;
+      flushHeaders?(): void;
+    };
+  }
+}
+
 export function initSSE(res: FastifyReply) {
   res.raw.setHeader("Content-Type", "text/event-stream");
   res.raw.setHeader("Cache-Control", "no-cache, no-transform");
   res.raw.setHeader("Connection", "keep-alive");
-  // @ts-ignore
   res.raw.flushHeaders?.();
 }
 

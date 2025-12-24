@@ -45,19 +45,24 @@
     "preinstall": "node bin/preinstall.js",
     "start:proxy": "tsx adapters/anthropic-gateway.ts",
     "build": "tsc -p tsconfig.json",
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@fastify/rate-limit": "^9.1.0",
     "dotenv": "^16.4.5",
     "eventsource-parser": "^1.1.2",
     "fastify": "^4.28.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "@vitest/coverage-v8": "^2.1.8",
     "tsx": "^4.15.6",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.8"
   }
 }

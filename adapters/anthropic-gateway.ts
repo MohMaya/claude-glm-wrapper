@@ -1,14 +1,28 @@
 // Main Fastify server that routes requests by provider prefix
 import Fastify from "fastify";
+import rateLimit from "@fastify/rate-limit";
 import { parseProviderModel, warnIfTools } from "./map.js";
 import type { AnthropicRequest, ProviderModel } from "./types.js";
 import { chatOpenAI } from "./providers/openai.js";
 import { chatOpenRouter } from "./providers/openrouter.js";
 import { chatGemini } from "./providers/gemini.js";
 import { passThrough } from "./providers/anthropic-pass.js";
+import { setSSEHeaders, ApiError } from "./utils.js";
 import { config } from "dotenv";
 import { join } from "path";
 import { homedir } from "os";
+
+// Extend FastifyReply with flushHeaders (not in default types but works)
+declare module "fastify" {
+  interface FastifyReply {
+    raw: {
+      setHeader(name: string, value: string): void;
+      write(chunk: Uint8Array | string): boolean;
+      end(): void;
+      flushHeaders?(): void;
+    };
+  }
+}
 
 // Load .env from ~/.claude-proxy/.env
 const envPath = join(homedir(), ".claude-proxy", ".env");
@@ -19,6 +33,47 @@ const PORT = Number(process.env.CLAUDE_PROXY_PORT || 17870);
 let active: ProviderModel | null = null;
 
 const fastify = Fastify({ logger: false });
+
+// Configure rate limiting
+await fastify.register(rateLimit, {
+  global: true,
+  max: 100,
+  timeWindow: "1 minute",
+  errorResponseBuilder: (request, context) => {
+    return {
+      error: "Too Many Requests",
+      message: `Rate limit exceeded. Try again in ${context.after}`,
+      retryAfter: context.after
+    };
+  }
+});
+
+// Schema for request validation
+const messagesBodySchema = {
+  type: "object",
+  required: ["model", "messages"],
+  properties: {
+    model: { type: "string", minLength: 1 },
+    messages: {
+      type: "array",
+      minItems: 1,
+      items: {
+        type: "object",
+        required: ["role", "content"],
+        properties: {
+          role: { type: "string", enum: ["user", "assistant"] },
+          content: { type: ["string", "array"] }
+        }
+      }
+    },
+    max_tokens: { type: "integer", minimum: 1 },
+    temperature: { type: "number", minimum: 0, maximum: 2 },
+    stream: { type: "boolean" },
+    tools: { type: "array" },
+    system: { type: "string" }
+  },
+  additionalProperties: true
+};
 
 // Health check endpoint
 fastify.get("/healthz", async () => ({
@@ -32,7 +87,11 @@ fastify.get("/_status", async () => {
 });
 
 // Main messages endpoint - routes by model prefix
-fastify.post("/v1/messages", async (req, res) => {
+fastify.post("/v1/messages", {
+  schema: {
+    body: messagesBodySchema
+  }
+}, async (req, res) => {
   try {
     const body = req.body as AnthropicRequest;
     const defaults = active ?? undefined;
@@ -49,12 +108,7 @@ fastify.post("/v1/messages", async (req, res) => {
       if (!key) {
         throw apiError(401, "OPENAI_API_KEY not set in ~/.claude-proxy/.env");
       }
-      // Set headers only after validation
-      res.raw.setHeader("Content-Type", "text/event-stream");
-      res.raw.setHeader("Cache-Control", "no-cache, no-transform");
-      res.raw.setHeader("Connection", "keep-alive");
-      // @ts-ignore
-      res.raw.flushHeaders?.();
+      setSSEHeaders(res);
       return chatOpenAI(res, body, model, key);
     }
 
@@ -63,11 +117,7 @@ fastify.post("/v1/messages", async (req, res) => {
       if (!key) {
         throw apiError(401, "OPENROUTER_API_KEY not set in ~/.claude-proxy/.env");
       }
-      res.raw.setHeader("Content-Type", "text/event-stream");
-      res.raw.setHeader("Cache-Control", "no-cache, no-transform");
-      res.raw.setHeader("Connection", "keep-alive");
-      // @ts-ignore
-      res.raw.flushHeaders?.();
+      setSSEHeaders(res);
       return chatOpenRouter(res, body, model, key);
     }
 
@@ -76,11 +126,7 @@ fastify.post("/v1/messages", async (req, res) => {
       if (!key) {
         throw apiError(401, "GEMINI_API_KEY not set in ~/.claude-proxy/.env");
       }
-      res.raw.setHeader("Content-Type", "text/event-stream");
-      res.raw.setHeader("Cache-Control", "no-cache, no-transform");
-      res.raw.setHeader("Connection", "keep-alive");
-      // @ts-ignore
-      res.raw.flushHeaders?.();
+      setSSEHeaders(res);
       return chatGemini(res, body, model, key);
     }
 
@@ -157,11 +203,8 @@ fastify.post("/v1/messages", async (req, res) => {
   }
 });
 
-function apiError(status: number, message: string) {
-  const e = new Error(message);
-  // @ts-ignore
-  e.statusCode = status;
-  return e;
+function apiError(status: number, message: string): ApiError {
+  return new ApiError(message, status);
 }
 
 fastify
