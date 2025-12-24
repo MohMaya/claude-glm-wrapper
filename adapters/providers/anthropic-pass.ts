@@ -16,7 +16,7 @@ type PassArgs = {
  * - Anthropic's official API
  * - Z.AI's GLM API (Anthropic-compatible)
  */
-export async function passThrough({ res, body, model, baseUrl, headers }: PassArgs) {
+export async function passThrough({ res, body, model: _model, baseUrl, headers }: PassArgs) {
   const url = `${stripEndSlash(baseUrl)}/v1/messages`;
 
   // Ensure stream is true for Claude Code UX

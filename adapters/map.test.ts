@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseProviderModel, toPlainText, toOpenAIMessages, toGeminiContents } from './map';
-import type { AnthropicMessage, AnthropicRequest, ProviderModel } from './types';
+import type { AnthropicMessage, ProviderModel } from './types';
 
 describe('parseProviderModel', () => {
   it('should parse provider:model format', () => {
