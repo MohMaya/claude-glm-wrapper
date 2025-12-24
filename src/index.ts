@@ -25,7 +25,7 @@ cli
   .action(async () => {
     console.log("Updating ccx...");
     const { spawn } = await import("bun");
-    const proc = spawn(["npm", "install", "-g", "claude-glm-wrapper"], { stdio: "inherit" });
+    const proc = spawn(["npm", "install", "-g", "claude-glm-wrapper"], { stdio: ["inherit", "inherit", "inherit"] });
     await proc.exited;
     if (proc.exitCode === 0) {
         console.log("✅ Update complete!");

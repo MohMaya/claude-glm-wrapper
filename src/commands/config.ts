@@ -1,5 +1,5 @@
 import { ConfigManager } from "../core/config";
-import pc from "picocolors";
+import * as pc from "picocolors";
 import { spawn } from "bun";
 
 export async function configCommand() {

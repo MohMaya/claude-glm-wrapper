@@ -36,7 +36,7 @@ export async function* streamOpenAI(
   const decoder = new TextDecoder();
   let buffer = ""; // Store partial chunks if needed, but parser handles it
 
-  const parser = createParser((event: any) => {
+  const parser = createParser(((event: any) => {
     if (event.type !== "event") return;
     const data = event.data;
     if (!data || data === "[DONE]") return;
@@ -45,7 +45,7 @@ export async function* streamOpenAI(
       const chunk = json.choices?.[0]?.delta?.content ?? "";
       if (chunk) buffer += createDelta(chunk);
     } catch {}
-  });
+  }) as any);
 
   while (true) {
     const { value, done } = await reader.read();
@@ -91,7 +91,7 @@ export async function* streamGemini(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  const parser = createParser((event: any) => {
+  const parser = createParser(((event: any) => {
     if (event.type !== "event") return;
     const data = event.data;
     if (!data) return;
@@ -100,7 +100,7 @@ export async function* streamGemini(
       const text = json?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || "").join("") || "";
       if (text) buffer += createDelta(text);
     } catch {}
-  });
+  }) as any);
 
   while (true) {
     const { value, done } = await reader.read();

@@ -2,7 +2,7 @@ import { spawn } from "bun";
 import { ConfigManager } from "../core/config";
 import { startProxyServer } from "../proxy/server";
 import { ShellIntegrator } from "../core/shell";
-import pc from "picocolors";
+import * as pc from "picocolors";
 
 export async function runCommand(args: string[], options: { model?: string; port?: number }) {
   const configManager = new ConfigManager();

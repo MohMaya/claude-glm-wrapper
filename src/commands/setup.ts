@@ -2,7 +2,7 @@ import { intro, outro, text, confirm, select, spinner, isCancel, cancel, note } 
 import { ConfigManager } from "../core/config";
 import { ShellIntegrator } from "../core/shell";
 import { spawn } from "bun";
-import pc from "picocolors";
+import * as pc from "picocolors";
 
 export async function setupCommand() {
   intro(pc.bgBlue(pc.white(" Claude-GLM Setup ")));

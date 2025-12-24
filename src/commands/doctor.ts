@@ -1,7 +1,7 @@
 import { intro, outro, spinner } from "@clack/prompts";
 import { ShellIntegrator } from "../core/shell";
 import { ConfigManager } from "../core/config";
-import pc from "picocolors";
+import * as pc from "picocolors";
 import { existsSync } from "fs";
 
 export async function doctorCommand() {

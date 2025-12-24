@@ -52,3 +52,20 @@ export class ApiError extends Error {
     super(message);
   }
 }
+
+// Convert an async generator to a ReadableStream
+export function toReadableStream<T>(gen: AsyncGenerator<T>): ReadableStream<T> {
+  return new ReadableStream({
+    async pull(controller) {
+      const { value, done } = await gen.next();
+      if (done) {
+        controller.close();
+      } else {
+        controller.enqueue(value);
+      }
+    },
+    cancel() {
+      gen.return(undefined);
+    }
+  });
+}

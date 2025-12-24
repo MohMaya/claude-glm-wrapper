@@ -38,11 +38,11 @@ export function parseProviderModel(modelField: string, defaults?: ProviderModel)
   }
 
   const [maybeProv, ...rest] = modelField.split(sep);
-  let prov = maybeProv.toLowerCase();
+  let prov = (maybeProv || "").toLowerCase();
 
   // Resolve alias
   if (PROVIDER_ALIASES[prov]) {
-      prov = PROVIDER_ALIASES[prov];
+      prov = PROVIDER_ALIASES[prov] || prov;
   }
 
   if (!PROVIDER_PREFIXES.includes(prov as ProviderKey)) {
