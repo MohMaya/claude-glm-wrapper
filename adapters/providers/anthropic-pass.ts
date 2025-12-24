@@ -1,6 +1,6 @@
 // Pass-through adapter for Anthropic-compatible upstreams (Anthropic API and Z.AI GLM)
 import { FastifyReply } from "fastify";
-import { safeText, setSSEHeaders } from "../utils.js";
+import { ApiError, safeText, setSSEHeaders } from "../utils.js";
 
 type PassArgs = {
   res: FastifyReply;
@@ -30,9 +30,7 @@ export async function passThrough({ res, body, model, baseUrl, headers }: PassAr
 
   if (!resp.ok || !resp.body) {
     const text = await safeText(resp);
-    const err = new Error(`Upstream error (${resp.status}): ${text}`);
-    err.statusCode = resp.status || 502;
-    throw err;
+    throw new ApiError(`Upstream error (${resp.status}): ${text}`, resp.status || 502);
   }
 
   // Pipe upstream SSE as-is (already in Anthropic format)

@@ -8,15 +8,22 @@ const createMockReply = () => {
   const mockSetHeader = vi.fn();
   const mockFlushHeaders = vi.fn();
 
-  const mockReply = {
+  const mockReply: {
+    write: typeof mockWrite;
+    end: typeof mockEnd;
+    setHeader: typeof mockSetHeader;
+    flushHeaders: typeof mockFlushHeaders;
+    raw: typeof mockReply;
+  } = {
     write: mockWrite,
     end: mockEnd,
     setHeader: mockSetHeader,
-    flushHeaders: mockFlushHeaders
+    flushHeaders: mockFlushHeaders,
+    raw: null as any
   };
 
   // raw property points to same object for SSE writes
-  mockReply.raw = mockReply as any;
+  mockReply.raw = mockReply;
 
   return mockReply as any;
 };

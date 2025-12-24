@@ -11,18 +11,7 @@ import { setSSEHeaders, ApiError } from "./utils.js";
 import { config } from "dotenv";
 import { join } from "path";
 import { homedir } from "os";
-
-// Extend FastifyReply with flushHeaders (not in default types but works)
-declare module "fastify" {
-  interface FastifyReply {
-    raw: {
-      setHeader(name: string, value: string): void;
-      write(chunk: Uint8Array | string): boolean;
-      end(): void;
-      flushHeaders?(): void;
-    };
-  }
-}
+// FastifyReply raw type is augmented in types.d.ts
 
 // Load .env from ~/.claude-proxy/.env
 const envPath = join(homedir(), ".claude-proxy", ".env");
@@ -61,7 +50,7 @@ const messagesBodySchema = {
         type: "object",
         required: ["role", "content"],
         properties: {
-          role: { type: "string", enum: ["user", "assistant"] },
+          role: { type: "string", enum: ["user", "assistant", "system"] },
           content: { type: ["string", "array"] }
         }
       }

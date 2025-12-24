@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseProviderModel, toPlainText, toOpenAIMessages, toGeminiContents } from './map';
-import type { AnthropicMessage, AnthropicRequest } from './types';
+import type { AnthropicMessage, AnthropicRequest, ProviderModel } from './types';
 
 describe('parseProviderModel', () => {
   it('should parse provider:model format', () => {
@@ -19,13 +19,13 @@ describe('parseProviderModel', () => {
   });
 
   it('should use defaults when no prefix', () => {
-    const defaults = { provider: 'anthropic', model: 'claude-3-5-sonnet' };
+    const defaults: ProviderModel = { provider: 'anthropic', model: 'claude-3-5-sonnet' };
     const result = parseProviderModel('some-model', defaults);
     expect(result).toEqual(defaults);
   });
 
   it('should use defaults for unrecognized prefix', () => {
-    const defaults = { provider: 'openai', model: 'gpt-4o' };
+    const defaults: ProviderModel = { provider: 'openai', model: 'gpt-4o' };
     const result = parseProviderModel('unknown:model-name', defaults);
     expect(result).toEqual(defaults);
   });

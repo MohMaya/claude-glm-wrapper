@@ -1,17 +1,6 @@
 // Shared utilities for provider adapters
 import type { FastifyReply } from "fastify";
-
-// Extend FastifyReply with flushHeaders (not in default types but works)
-declare module "fastify" {
-  interface FastifyReply {
-    raw: {
-      setHeader(name: string, value: string): void;
-      write(chunk: Uint8Array | string): boolean;
-      end(): void;
-      flushHeaders?(): void;
-    };
-  }
-}
+// FastifyReply raw type is augmented in types.d.ts
 
 /**
  * Custom error with status code for API errors
