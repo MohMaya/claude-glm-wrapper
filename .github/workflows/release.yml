@@ -29,7 +29,7 @@ jobs:
           # No registry-url needed - OIDC handles authentication
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --ignore-scripts
 
       - name: Run ESLint
         run: npm run lint
