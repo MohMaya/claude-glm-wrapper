@@ -1,4 +1,5 @@
 # CD Workflow - Publishes to npm when version tags are pushed to main
+# Uses Trusted Publishing (OIDC) - No NPM_TOKEN secret required!
 # Usage: git tag v2.2.0 && git push origin v2.2.0
 
 name: Release
@@ -10,7 +11,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write  # Required for npm provenance
+  id-token: write  # Required for OIDC/Trusted Publishing
 
 jobs:
   publish:
@@ -25,7 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
+          # No registry-url needed - OIDC handles authentication
 
       - name: Install dependencies
         run: npm ci
@@ -42,25 +43,16 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
       - name: Publish to npm with provenance
         run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # No NODE_AUTH_TOKEN needed - OIDC token is automatically used
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
           body: |
-            ## Changes in ${{ steps.version.outputs.version }}
+            ## Changes in ${{ github.ref_name }}
 
             See [CHANGELOG.md](https://github.com/MohMaya/claude-glm-wrapper/blob/main/CHANGELOG.md) for details.
-          draft: false
-          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
