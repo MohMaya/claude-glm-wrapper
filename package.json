@@ -1,6 +1,6 @@
 {
   "name": "cc-x10ded",
-  "version": "3.0.11",
+  "version": "3.0.12",
   "description": "Extend Claude Code with custom OpenAI-compatible model providers",
   "repository": {
     "type": "git",

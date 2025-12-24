@@ -5,7 +5,7 @@
 > This is an actively maintained community fork of the original [claude-glm-wrapper](https://github.com/JoeInnsp23/claude-glm-wrapper). 
 > Now rewritten in **Bun** for 10x speed and single-binary simplicity.
 > 
-> Install via: `bunx claude-glm-wrapper` or download the binary.
+> Install via: `bunx cc-x10ded setup` or download the binary.
 
 ---
 
@@ -25,9 +25,9 @@ Use [Z.AI's GLM models](https://z.ai), [Minimax](https://minimax.io), [OpenAI](h
 
 ### Installation
 
-**If you have Bun:**
+**If you have Bun (recommended):**
 ```bash
-bunx claude-glm-wrapper setup
+bunx cc-x10ded setup
 ```
 
 **Manual Download (Mac/Linux/Windows):**
@@ -60,11 +60,12 @@ If you enabled aliases during setup:
 
 | Alias | Equivalent Command |
 |-------|-------------------|
-| `cc` | `claude` (Standard Anthropic) |
-| `ccg` | `ccx --model=glm-4.7` |
-| `ccg45` | `ccx --model=glm-4.5` |
-| `ccf` | `ccx --model=glm-4.5-air` |
-| `ccm` | `ccx --model=MiniMax-M2.1` |
+| `cc` | `bunx cc-x10ded` (default model) |
+| `ccx` | `bunx cc-x10ded` |
+| `ccg` | `bunx cc-x10ded --model=glm-4.7` |
+| `ccg45` | `bunx cc-x10ded --model=glm-4.5` |
+| `ccf` | `bunx cc-x10ded --model=glm-4.5-air` |
+| `ccm` | `bunx cc-x10ded --model=MiniMax-M2.1` |
 
 ### Multi-Provider Proxy
 
@@ -109,13 +110,33 @@ You can edit it with `ccx config`.
 }
 ```
 
+## Migrating from Old Versions
+
+If you're upgrading from `claude-glm-wrapper` (pre-3.0), you need to clean up the old installation:
+
+```bash
+# Remove old global package
+npm uninstall -g claude-glm-wrapper
+
+# Remove old proxy files (no longer used)
+rm -rf ~/.claude-proxy/
+
+# Install new version
+bunx cc-x10ded setup
+```
+
+The new version:
+- Uses `bunx cc-x10ded` instead of `ccx` command
+- Runs proxy in-process (no separate process or `~/.claude-proxy/`)
+- Stores config in `~/.config/claude-glm/` (unchanged)
+
 ## Troubleshooting
 
 **"ccx: command not found"**
-Ensure the binary is in your PATH, or that you've run the setup which helps install aliases.
+Run `bunx cc-x10ded setup` to install shell aliases, then restart your terminal.
 
 **"Error: 'claude' command not found"**
-Run `ccx doctor` or `ccx setup` — it will offer to install Claude Code for you automatically!
+Run `bunx cc-x10ded doctor` — it will check your Claude Code installation.
 
 ## License
 
