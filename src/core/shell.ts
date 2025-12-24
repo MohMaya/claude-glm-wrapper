@@ -1,6 +1,6 @@
 import { join } from "path";
 import { homedir, platform } from "os";
-import { existsSync, readFileSync, appendFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 
 export type ShellType = "bash" | "zsh" | "fish" | "powershell" | "unknown";
 

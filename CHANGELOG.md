@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-12-24
+
+### 🚀 Major Rewrite (The "30x" Release)
+This release is a complete reimagining of the project, rewriting the entire codebase from Bash/PowerShell to **Bun/TypeScript**.
+
+### Added
+- **Single Binary (`ccx`)**: Replaced 5+ wrapper scripts with a single, standalone executable. No dependencies required.
+- **Interactive Setup (`ccx setup`)**: Beautiful CLI wizard to configure keys and aliases safely.
+- **Self-Healing Diagnostics (`ccx doctor`)**: Checks for API keys, Claude installation, shell paths, and configuration health.
+- **Auto-Discovery**: Automatically detects API keys (`ZAI_API_KEY`, `OPENAI_API_KEY`, etc.) from your environment.
+- **Smart Proxy**: `ccx` acts as a transparent proxy for OpenAI, Gemini, Minimax, and GLM models.
+- **Port Hunting**: Automatically finds an available port if 17870 is busy.
+- **Binary Hunting**: Robustly locates the `claude` binary in standard locations (Homebrew, NVM, npm global) even if it's missing from PATH.
+- **PowerShell Integration**: Native support for PowerShell profiles and aliases.
+
+### Changed
+- **Renamed**: Project package name changed to `cc-x10ded`.
+- **Runtime**: Switched from Node.js to **Bun** for instant startup performance.
+- **Config**: Moved from hardcoded script variables to `~/.config/claude-glm/config.json`.
+- **Proxy**: Migrated from Fastify to `Bun.serve()` for lower latency streaming.
+
+### Removed
+- Removed legacy `install.sh` and `install.ps1` scripts.
+- Removed dependency on user having Node.js installed (for binary usage).
+
 ## [Unreleased]
 
 ### Added

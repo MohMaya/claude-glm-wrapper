@@ -1,8 +1,8 @@
 import { serve } from "bun";
 import { parseProviderModel } from "./map";
 import { streamOpenAI, streamGemini, streamPassThrough } from "./providers";
-import { Config } from "../core/config";
-import { AnthropicRequest } from "./types";
+import type { Config } from "../core/config";
+import type { AnthropicRequest } from "./types";
 
 export function startProxyServer(config: Config, port: number = 17870) {
   return serve({

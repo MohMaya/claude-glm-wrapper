@@ -1,4 +1,4 @@
-import { AnthropicMessage, AnthropicRequest, ProviderKey, ProviderModel } from "./types";
+import type { AnthropicMessage, AnthropicRequest, ProviderKey, ProviderModel } from "./types";
 
 const PROVIDER_PREFIXES: ProviderKey[] = ["openai", "openrouter", "gemini", "glm", "anthropic", "minimax"];
 

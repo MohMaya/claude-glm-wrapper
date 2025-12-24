@@ -49,9 +49,9 @@ export async function setupCommand() {
     });
     
     if (openBrowser && !isCancel(openBrowser)) {
-        spawn(["open", "https://z.ai/manage-apikey/apikey-list"]).catch(() => {});
-        spawn(["xdg-open", "https://z.ai/manage-apikey/apikey-list"]).catch(() => {}); // Linux
-        spawn(["explorer", "https://z.ai/manage-apikey/apikey-list"]).catch(() => {}); // Windows
+        try { spawn(["open", "https://z.ai/manage-apikey/apikey-list"]); } catch {}
+        try { spawn(["xdg-open", "https://z.ai/manage-apikey/apikey-list"]); } catch {} // Linux
+        try { spawn(["explorer", "https://z.ai/manage-apikey/apikey-list"]); } catch {} // Windows
     }
 
     const zaiKey = await text({

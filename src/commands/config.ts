@@ -14,7 +14,7 @@ export async function configCommand() {
   
   try {
     const proc = spawn([editor, path], {
-        stdio: "inherit"
+        stdio: ["inherit", "inherit", "inherit"]
     });
     await proc.exited;
   } catch (e) {

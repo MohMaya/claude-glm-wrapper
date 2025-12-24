@@ -1,5 +1,5 @@
 import { createParser } from "eventsource-parser";
-import { AnthropicRequest } from "./types";
+import type { AnthropicRequest } from "./types";
 import { toOpenAIMessages, toGeminiContents } from "./map";
 import { createStartMessage, createDelta, createStopMessage, ApiError } from "./utils";
 
@@ -36,7 +36,7 @@ export async function* streamOpenAI(
   const decoder = new TextDecoder();
   let buffer = ""; // Store partial chunks if needed, but parser handles it
 
-  const parser = createParser((event) => {
+  const parser = createParser((event: any) => {
     if (event.type !== "event") return;
     const data = event.data;
     if (!data || data === "[DONE]") return;
@@ -91,7 +91,7 @@ export async function* streamGemini(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  const parser = createParser((event) => {
+  const parser = createParser((event: any) => {
     if (event.type !== "event") return;
     const data = event.data;
     if (!data) return;

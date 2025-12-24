@@ -38,6 +38,13 @@ jobs:
           mv dist/ccx-darwin release/ccx-macos-arm64
           mv dist/ccx.exe release/ccx-windows-x64.exe
 
+      - name: Publish to NPM
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          npm publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -50,13 +57,20 @@ jobs:
             
             ### Installation
             
-            **macOS / Linux:**
+            **Via Bun (Recommended):**
+            ```bash
+            bunx cc-x10ded setup
+            ```
+
+            **Via Manual Download:**
+            
+            *macOS / Linux:*
             ```bash
             curl -fsSL https://github.com/MohMaya/claude-glm-wrapper/releases/download/${{ github.ref_name }}/ccx-macos-arm64 -o ccx && chmod +x ccx
             ./ccx setup
             ```
             
-            **Windows:**
+            *Windows:*
             Download `ccx-windows-x64.exe` and run:
             ```powershell
             .\ccx-windows-x64.exe setup
