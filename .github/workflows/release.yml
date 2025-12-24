@@ -26,11 +26,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # Upgrade npm to 11.5.1+ for OIDC/Trusted Publishing
-          npm-version: latest
+
+      - name: Upgrade npm to 11.5.1+ for OIDC
+        run: npm install -g npm@latest
 
       - name: Verify npm version
-        run: npm --version
+        run: |
+          echo "npm version:"
+          npm --version
+          echo "Checking version is 11.5.1 or higher..."
+          NPM_VERSION=$(npm --version | cut -d. -f1)
+          if [ "$NPM_VERSION" -lt 11 ]; then
+            echo "ERROR: npm version must be 11.5.1+ for OIDC"
+            exit 1
+          fi
+          echo "npm version is compatible with OIDC"
 
       - name: Install dependencies
         run: npm install --ignore-scripts
