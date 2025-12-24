@@ -53,40 +53,6 @@ export function parseProviderModel(modelField: string, defaults?: ProviderModel)
   return { provider: prov as ProviderKey, model: rest.join(sep) };
 }
 
-<<<<<<< Updated upstream:adapters/map.ts
-/**
- * Warn if tools are being used with providers that may not support them
- */
-export function warnIfTools(req: AnthropicRequest, provider: ProviderKey): void {
-  if (req.tools && req.tools.length > 0) {
-    // Only GLM, Anthropic, and Minimax support tools natively
-    if (provider !== "glm" && provider !== "anthropic" && provider !== "minimax") {
-      console.warn(`[proxy] Warning: ${provider} may not fully support Anthropic-style tools. Passing through anyway.`);
-    }
-  }
-}
-
-/**
- * Convert Anthropic content to plain text
- */
-||||||| Stash base:adapters/map.ts
-/**
- * Warn if tools are being used with providers that may not support them
- */
-export function warnIfTools(req: AnthropicRequest, provider: ProviderKey): void {
-  if (req.tools && req.tools.length > 0) {
-    // Only GLM, Anthropic, and Minimax support tools natively
-    if (provider !== "glm" && provider !== "anthropic" && provider !== "minimax") {
-      console.warn(`[proxy] Warning: ${provider} may not fully support Anthropic-style tools. Passing through anyway.`);
-    }
-  }
-}
-
-/**
- * Convert Anthropic content to plain text
- */
-=======
->>>>>>> Stashed changes:src/proxy/map.ts
 export function toPlainText(content: AnthropicMessage["content"]): string {
   if (typeof content === "string") return content;
   return content
