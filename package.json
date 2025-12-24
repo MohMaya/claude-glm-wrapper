@@ -1,6 +1,6 @@
 {
   "name": "claude-glm-wrapper",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "description": "Cross-platform wrapper for Claude Code with Z.AI GLM models (Bun Edition)",
   "type": "module",
   "bin": {
