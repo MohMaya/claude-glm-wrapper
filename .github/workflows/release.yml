@@ -29,8 +29,7 @@ jobs:
       - name: Setup Node.js for npm publish
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: '20'
 
       - name: Update npm to latest
         run: npm install -g npm@latest
