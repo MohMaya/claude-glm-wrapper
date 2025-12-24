@@ -193,19 +193,20 @@ function Add-PowerShellAliases {
 
     # Remove old aliases if they exist
     $filteredContent = $profileContent | Where-Object {
-        $_ -notmatch "# Claude Code Model Switcher Aliases" -and
-        $_ -notmatch "Set-Alias cc " -and
-        $_ -notmatch "Set-Alias ccg " -and
-        $_ -notmatch "Set-Alias ccg46 " -and
-        $_ -notmatch "Set-Alias ccg45 " -and
-        $_ -notmatch "Set-Alias ccf " -and
-        $_ -notmatch "Set-Alias ccm "
+        $_ -notmatch "^# Claude Code Model Switcher Aliases" -and
+        $_ -notmatch "^Set-Alias cc " -and
+        $_ -notmatch "^Set-Alias ccg " -and
+        $_ -notmatch "^Set-Alias ccg46 " -and
+        $_ -notmatch "^Set-Alias ccg45 " -and
+        $_ -notmatch "^Set-Alias ccf " -and
+        $_ -notmatch "^Set-Alias ccm " -and
+        $_ -notmatch "^Set-Alias glm "
     }
 
     # Add new aliases
     $aliases = @"
 
-# Claude Code Model Switcher Aliases
+# Claude Code Model Switcher Aliases (v2.1.0)
 Set-Alias cc claude
 Set-Alias ccg claude-glm
 Set-Alias ccg46 claude-glm-4.6
@@ -218,6 +219,22 @@ Set-Alias ccm claude-minimax
     Set-Content -Path $PROFILE -Value $newContent
 
     Write-Host "OK: Added aliases to PowerShell profile: $PROFILE"
+    
+    # Verify aliases were added
+    $profileCheck = Get-Content $PROFILE -ErrorAction SilentlyContinue
+    $hasCcm = ($profileCheck | Select-String -Pattern "^Set-Alias ccm " -Quiet)
+    $hasCcg46 = ($profileCheck | Select-String -Pattern "^Set-Alias ccg46 " -Quiet)
+    
+    if (-not $hasCcm) {
+        Write-Host "WARNING: Aliases may not have been added correctly"
+        Write-Host "   Please manually add these to $PROFILE:"
+        Write-Host "   Set-Alias ccm claude-minimax"
+        Write-Host "   Set-Alias ccg46 claude-glm-4.6"
+    } elseif (-not $hasCcg46) {
+        Write-Host "WARNING: ccg46 alias may not have been added correctly"
+        Write-Host "   Please manually add this to $PROFILE:"
+        Write-Host "   Set-Alias ccg46 claude-glm-4.6"
+    }
 }
 
 # Create the GLM-4.7 wrapper

@@ -851,15 +851,17 @@ create_shell_aliases() {
     fi
     
     # Remove old aliases if they exist
-    if grep -q "# Claude Code Model Switcher Aliases" "$rc_file" 2>/dev/null; then
+    if grep -q "# Claude Code Model Switcher Aliases" "$rc_file" 2>/dev/null || grep -q "# Claude Code Model Switcher Aliases (v" "$rc_file" 2>/dev/null; then
         # Use temp file for compatibility
         grep -v "# Claude Code Model Switcher Aliases" "$rc_file" | \
-        grep -v "alias cc=" | \
-        grep -v "alias ccg=" | \
-        grep -v "alias ccg46=" | \
-        grep -v "alias ccg45=" | \
-        grep -v "alias ccf=" | \
-        grep -v "alias ccm=" > "$rc_file.tmp"
+        grep -v "^alias cc=" | \
+        grep -v "^alias ccg=" | \
+        grep -v "^alias ccg46=" | \
+        grep -v "^alias ccg45=" | \
+        grep -v "^alias ccf=" | \
+        grep -v "^alias ccm=" | \
+        grep -v "^alias glm=" | \
+        grep -v "# Claude Code Model Switcher Aliases (v" > "$rc_file.tmp"
         mv "$rc_file.tmp" "$rc_file"
     fi
     
@@ -867,7 +869,7 @@ create_shell_aliases() {
     if [[ "$rc_file" == *".cshrc" ]]; then
         cat >> "$rc_file" << 'EOF'
 
-# Claude Code Model Switcher Aliases
+# Claude Code Model Switcher Aliases (v2.1.0)
 alias cc 'claude'
 alias ccg 'claude-glm'
 alias ccg46 'claude-glm-4.6'
@@ -878,7 +880,7 @@ EOF
     else
         cat >> "$rc_file" << 'EOF'
 
-# Claude Code Model Switcher Aliases
+# Claude Code Model Switcher Aliases (v2.1.0)
 alias cc='claude'
 alias ccg='claude-glm'
 alias ccg46='claude-glm-4.6'
@@ -889,6 +891,18 @@ EOF
     fi
     
     echo "✅ Added aliases to $rc_file"
+    
+    # Verify aliases were added
+    if ! grep -q "alias ccm=" "$rc_file" 2>/dev/null && ! grep -q "alias ccm " "$rc_file" 2>/dev/null; then
+        echo "⚠️  Warning: Aliases may not have been added correctly"
+        echo "   Please manually add these to $rc_file:"
+        echo "   alias ccm='claude-minimax'"
+        echo "   alias ccg46='claude-glm-4.6'"
+    elif ! grep -q "alias ccg46=" "$rc_file" 2>/dev/null && ! grep -q "alias ccg46 " "$rc_file" 2>/dev/null; then
+        echo "⚠️  Warning: ccg46 alias may not have been added correctly"
+        echo "   Please manually add this to $rc_file:"
+        echo "   alias ccg46='claude-glm-4.6'"
+    fi
 }
 
 # Check Claude Code availability
