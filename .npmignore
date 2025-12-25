@@ -5,6 +5,11 @@
 
 # Claude directories
 .claude
+.serena
+
+# Compiled binaries (released separately)
+dist/
+release/
 
 # Editor files
 .vscode
@@ -25,3 +30,11 @@ DEVELOPMENT.md
 
 # Universal bootstrap (not needed for npm)
 install
+
+# Lock files (consumers use their own)
+bun.lock
+package-lock.json
+
+# Dev tooling (not needed for consumers)
+.husky/
+lint-staged.config.js

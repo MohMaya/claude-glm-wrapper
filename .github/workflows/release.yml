@@ -1,0 +1,86 @@
+# CD Workflow - Builds binaries and publishes to GitHub Releases
+# Publishes cross-platform binaries (Linux, macOS, Windows)
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build-and-release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update npm to latest
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Binaries
+        run: |
+          mkdir -p release
+          bun run build:linux
+          bun run build:darwin
+          bun run build:windows
+          mv dist/ccx-linux release/ccx-linux-x64
+          mv dist/ccx-darwin release/ccx-macos-arm64
+          mv dist/ccx.exe release/ccx-windows-x64.exe
+
+      - name: Publish to NPM
+        run: npm publish --provenance --access public
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/ccx-linux-x64
+            release/ccx-macos-arm64
+            release/ccx-windows-x64.exe
+          body: |
+            ## Changes in ${{ github.ref_name }}
+            
+            ### Installation
+            
+            **Via Bun (Recommended):**
+            ```bash
+            bunx cc-x10ded setup
+            ```
+
+            **Via Manual Download:**
+            
+            *macOS / Linux:*
+            ```bash
+            curl -fsSL https://github.com/MohMaya/claude-glm-wrapper/releases/download/${{ github.ref_name }}/ccx-macos-arm64 -o ccx && chmod +x ccx
+            ./ccx setup
+            ```
+            
+            *Windows:*
+            Download `ccx-windows-x64.exe` and run:
+            ```powershell
+            .\ccx-windows-x64.exe setup
+            ```
+
+            See [CHANGELOG.md](https://github.com/MohMaya/claude-glm-wrapper/blob/main/CHANGELOG.md) for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

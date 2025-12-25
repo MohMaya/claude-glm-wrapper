@@ -1,60 +1,36 @@
 {
-  "name": "claude-glm-installer",
-  "version": "2.0.0",
-  "description": "Cross-platform installer for Claude Code with Z.AI GLM models and multi-provider proxy. Run with: npx claude-glm-installer",
-  "keywords": [
-    "claude",
-    "claude-code",
-    "glm",
-    "z.ai",
-    "openai",
-    "openrouter",
-    "gemini",
-    "ai",
-    "llm",
-    "installer",
-    "proxy"
-  ],
-  "homepage": "https://github.com/JoeInnsp23/claude-glm-wrapper#readme",
-  "bugs": {
-    "url": "https://github.com/JoeInnsp23/claude-glm-wrapper/issues"
-  },
+  "name": "cc-x10ded",
+  "version": "3.0.12",
+  "description": "Extend Claude Code with custom OpenAI-compatible model providers",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JoeInnsp23/claude-glm-wrapper.git"
+    "url": "https://github.com/MohMaya/claude-glm-wrapper"
   },
-  "license": "MIT",
-  "author": "Joseph Stephenson-Mouzo",
   "type": "module",
   "bin": {
-    "claude-glm-installer": "bin/cli.js"
+    "ccx": "./src/index.ts"
   },
-  "files": [
-    "bin/",
-    "adapters/",
-    "install.sh",
-    "install.ps1",
-    "tsconfig.json",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
-    "preinstall": "node bin/preinstall.js",
-    "start:proxy": "tsx adapters/anthropic-gateway.ts",
-    "build": "tsc -p tsconfig.json",
-    "test": "echo \"No tests yet\" && exit 0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "dev": "bun run src/index.ts",
+    "build": "bun build --compile --minify --sourcemap ./src/index.ts --outfile dist/ccx",
+    "build:all": "bun run build:linux && bun run build:windows && bun run build:darwin",
+    "build:linux": "bun build --compile --minify --sourcemap --target=bun-linux-x64 ./src/index.ts --outfile dist/ccx-linux",
+    "build:windows": "bun build --compile --minify --sourcemap --target=bun-windows-x64 ./src/index.ts --outfile dist/ccx.exe",
+    "build:darwin": "bun build --compile --minify --sourcemap --target=bun-darwin-arm64 ./src/index.ts --outfile dist/ccx-darwin",
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "prepare": "husky"
   },
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "eventsource-parser": "^1.1.2",
-    "fastify": "^4.28.1"
+    "@clack/prompts": "^0.11.0",
+    "cac": "^6.7.14",
+    "eventsource-parser": "^3.0.6",
+    "picocolors": "^1.1.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
-    "tsx": "^4.15.6",
-    "typescript": "^5.6.3"
+    "@types/bun": "latest",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "typescript": "^5.9.3"
   }
 }
