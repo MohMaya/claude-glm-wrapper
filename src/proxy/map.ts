@@ -33,7 +33,8 @@ export function parseProviderModel(modelField: string, defaults?: ProviderModel)
     if (lower.startsWith("gemini")) return { provider: "gemini", model: modelField };
     if (lower.startsWith("claude")) return { provider: "anthropic", model: modelField };
     if (lower.startsWith("glm")) return { provider: "glm", model: modelField };
-    
+    if (lower.startsWith("minimax")) return { provider: "minimax", model: modelField };
+
     return defaults ?? { provider: "glm", model: modelField };
   }
 
