@@ -171,18 +171,7 @@ The installer creates these commands and aliases:
 
 **💡 Tip**: Use the short aliases! They're faster to type and easier to remember.
 
-<<<<<<< Updated upstream
 **🆕 New: ccx Multi-Provider Proxy**
-||||||| Stash base
-| Alias | Equivalent Command |
-|-------|-------------------|
-| `cc` | `bunx cc-x10ded` (default model) |
-| `ccx` | `bunx cc-x10ded` |
-| `ccg` | `bunx cc-x10ded --model=glm-4.7` |
-| `ccg45` | `bunx cc-x10ded --model=glm-4.5` |
-| `ccf` | `bunx cc-x10ded --model=glm-4.5-air` |
-| `ccm` | `bunx cc-x10ded --model=MiniMax-M2.1` |
-=======
 | Alias | Equivalent Command |
 |-------|-------------------|
 | `ccx` | `bunx cc-x10ded` |
@@ -190,7 +179,6 @@ The installer creates these commands and aliases:
 | `ccg45` | `bunx cc-x10ded --model=glm-4.5` |
 | `ccf` | `bunx cc-x10ded --model=glm-4.5-air` |
 | `ccm` | `bunx cc-x10ded --model=MiniMax-M2.1` |
->>>>>>> Stashed changes
 
 The `ccx` command starts a local proxy that lets you switch between multiple AI providers in a single session:
 - **OpenAI**: GPT-4o, GPT-4o-mini, and more
