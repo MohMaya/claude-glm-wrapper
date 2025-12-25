@@ -58,9 +58,10 @@ Run `ccx setup` to:
 
 If you enabled aliases during setup:
 
+
+**🆕 New: ccx Multi-Provider Proxy**
 | Alias | Equivalent Command |
 |-------|-------------------|
-| `cc` | `bunx cc-x10ded` (default model) |
 | `ccx` | `bunx cc-x10ded` |
 | `ccg` | `bunx cc-x10ded --model=glm-4.7` |
 | `ccg45` | `bunx cc-x10ded --model=glm-4.5` |

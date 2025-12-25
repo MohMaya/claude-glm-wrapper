@@ -89,7 +89,6 @@ export class ShellIntegrator {
     if (shell === "zsh" || shell === "bash") {
       return `
 alias ccx='${cmd}'
-alias cc='${cmd}'
 alias ccg='${cmd} --model=glm-4.7'
 alias ccg46='${cmd} --model=glm-4.6'
 alias ccg45='${cmd} --model=glm-4.5'
@@ -100,7 +99,6 @@ alias ccm='${cmd} --model=MiniMax-M2.1'
     if (shell === "fish") {
        return `
 alias ccx '${cmd}'
-alias cc '${cmd}'
 alias ccg '${cmd} --model=glm-4.7'
 alias ccg46 '${cmd} --model=glm-4.6'
 alias ccg45 '${cmd} --model=glm-4.5'
@@ -111,7 +109,6 @@ alias ccm '${cmd} --model=MiniMax-M2.1'
     if (shell === "powershell") {
         return `
 Function ccx { ${cmd} @args }
-Function cc { ${cmd} @args }
 Function ccg { ${cmd} --model=glm-4.7 @args }
 Function ccg46 { ${cmd} --model=glm-4.6 @args }
 Function ccg45 { ${cmd} --model=glm-4.5 @args }
