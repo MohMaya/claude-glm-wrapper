@@ -6,7 +6,7 @@ export interface ProviderModel {
 }
 
 export interface AnthropicMessage {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string | Array<{ type: "text"; text: string } | { type: "tool_result"; content: string | any }>;
 }
 

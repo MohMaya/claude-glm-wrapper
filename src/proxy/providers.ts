@@ -1,7 +1,9 @@
 import { createParser } from "eventsource-parser";
 import type { AnthropicRequest } from "./types";
 import { toOpenAIMessages, toGeminiContents } from "./map";
-import { createStartMessage, createDelta, createStopMessage, ApiError } from "./utils";
+import { createStartMessage, createDelta, createStopMessage, ApiError, parseErrorResponse } from "./utils";
+
+const MAX_BUFFER_SIZE = 65536;
 
 // OpenAI
 export async function* streamOpenAI(
@@ -27,14 +29,14 @@ export async function* streamOpenAI(
     body: JSON.stringify(reqBody)
   });
 
-  if (!resp.ok) throw new ApiError(await resp.text(), resp.status);
+   if (!resp.ok) throw new ApiError(parseErrorResponse(await resp.text()), resp.status);
   if (!resp.body) throw new ApiError("No response body", 500);
 
   yield createStartMessage(model);
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
-  let buffer = ""; // Store partial chunks if needed, but parser handles it
+  let buffer = "";
 
   const parser = createParser(((event: any) => {
     if (event.type !== "event") return;
@@ -51,7 +53,10 @@ export async function* streamOpenAI(
     const { value, done } = await reader.read();
     if (done) break;
     parser.feed(decoder.decode(value));
-    if (buffer) {
+    if (buffer.length >= MAX_BUFFER_SIZE) {
+      yield buffer;
+      buffer = "";
+    } else if (buffer) {
       yield buffer;
       buffer = "";
     }
@@ -82,7 +87,7 @@ export async function* streamGemini(
     body: JSON.stringify(reqBody)
   });
 
-  if (!resp.ok) throw new ApiError(await resp.text(), resp.status);
+   if (!resp.ok) throw new ApiError(parseErrorResponse(await resp.text()), resp.status);
   if (!resp.body) throw new ApiError("No response body", 500);
 
   yield createStartMessage(model);
@@ -106,7 +111,10 @@ export async function* streamGemini(
     const { value, done } = await reader.read();
     if (done) break;
     parser.feed(decoder.decode(value));
-    if (buffer) {
+    if (buffer.length >= MAX_BUFFER_SIZE) {
+      yield buffer;
+      buffer = "";
+    } else if (buffer) {
       yield buffer;
       buffer = "";
     }
@@ -130,7 +138,7 @@ export async function* streamPassThrough(
     body: JSON.stringify(body)
   });
 
-  if (!resp.ok) throw new ApiError(await resp.text(), resp.status);
+   if (!resp.ok) throw new ApiError(parseErrorResponse(await resp.text()), resp.status);
   if (!resp.body) throw new ApiError("No response body", 500);
 
   const reader = resp.body.getReader();

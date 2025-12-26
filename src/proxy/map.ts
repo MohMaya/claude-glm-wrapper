@@ -80,8 +80,26 @@ export function toOpenAIMessages(messages: AnthropicMessage[]) {
 }
 
 export function toGeminiContents(messages: AnthropicMessage[]) {
-  return messages.map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: toPlainText(m.content) }]
-  }));
+  let systemInstruction: string | null = null;
+  const mappedMessages: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+
+  for (const m of messages) {
+    if (m.role === "system") {
+      systemInstruction = toPlainText(m.content);
+    } else {
+      mappedMessages.push({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: toPlainText(m.content) }]
+      });
+    }
+  }
+
+  if (systemInstruction && mappedMessages.length > 0) {
+    const firstMessage = mappedMessages[0];
+    if (firstMessage) {
+      firstMessage.parts.unshift({ text: `[System Instruction: ${systemInstruction}] ` });
+    }
+  }
+
+  return mappedMessages;
 }

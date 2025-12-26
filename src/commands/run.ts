@@ -68,7 +68,7 @@ export async function runCommand(args: string[], options: { model?: string; port
 
   if (useProxy) {
       env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${port}`;
-      env.ANTHROPIC_AUTH_TOKEN = "ccx-proxy-token"; // Dummy token for the client
+      env.ANTHROPIC_AUTH_TOKEN = `ccx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       env.ANTHROPIC_MODEL = model;
   }
 
