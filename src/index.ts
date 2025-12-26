@@ -22,8 +22,8 @@ cli
 
 cli
   .command("update", "Update ccx to the latest version")
-  .option("--migrate-aliases", "Also migrate old bunx-based aliases to new format")
-  .action(async (options: { migrateAliases?: boolean }) => {
+  .option("--skip-aliases", "Skip alias installation")
+  .action(async (options: { skipAliases?: boolean }) => {
     const { spawn } = await import("bun");
     const { ShellIntegrator } = await import("./core/shell");
     const pc = await import("picocolors");
@@ -43,15 +43,21 @@ cli
 
     console.log(pc.default.green("✅ ccx updated!"));
 
-    // Migrate aliases
-    const shellInt = new ShellIntegrator();
-    const shell = shellInt.detectShell();
+    // Always reinstall aliases (unless skipped)
+    if (!options.skipAliases) {
+      const shellInt = new ShellIntegrator();
+      const shell = shellInt.detectShell();
 
-    if (shell !== "unknown") {
-      const migrated = await shellInt.migrateAliases(shell);
-      if (migrated) {
-        console.log(pc.default.green("✅ Aliases migrated to new format!"));
-        console.log(pc.default.dim(`   Run: source ~/.${shell}rc (or restart your terminal)`));
+      if (shell !== "unknown") {
+        // Ensure bun bin is in PATH
+        await shellInt.ensureBunBinInPath(shell);
+
+        // Install/update aliases
+        const success = await shellInt.installAliases(shell);
+        if (success) {
+          console.log(pc.default.green("✅ Aliases updated!"));
+          console.log(pc.default.dim(`   Run: source ~/.${shell}rc (or restart your terminal)`));
+        }
       }
     }
 
