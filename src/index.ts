@@ -22,16 +22,40 @@ cli
 
 cli
   .command("update", "Update ccx to the latest version")
-  .action(async () => {
-    console.log("Updating ccx...");
+  .option("--migrate-aliases", "Also migrate old bunx-based aliases to new format")
+  .action(async (options: { migrateAliases?: boolean }) => {
     const { spawn } = await import("bun");
-    const proc = spawn(["npm", "install", "-g", "cc-x10ded"], { stdio: ["inherit", "inherit", "inherit"] });
+    const { ShellIntegrator } = await import("./core/shell");
+    const pc = await import("picocolors");
+
+    console.log(pc.default.blue("Updating ccx..."));
+
+    // Update via bun global install
+    const proc = spawn(["bun", "install", "-g", "cc-x10ded@latest"], {
+      stdio: ["inherit", "inherit", "inherit"]
+    });
     await proc.exited;
-    if (proc.exitCode === 0) {
-        console.log("✅ Update complete!");
-    } else {
-        console.error("❌ Update failed.");
+
+    if (proc.exitCode !== 0) {
+      console.error(pc.default.red("❌ Update failed."));
+      process.exit(1);
     }
+
+    console.log(pc.default.green("✅ ccx updated!"));
+
+    // Migrate aliases
+    const shellInt = new ShellIntegrator();
+    const shell = shellInt.detectShell();
+
+    if (shell !== "unknown") {
+      const migrated = await shellInt.migrateAliases(shell);
+      if (migrated) {
+        console.log(pc.default.green("✅ Aliases migrated to new format!"));
+        console.log(pc.default.dim(`   Run: source ~/.${shell}rc (or restart your terminal)`));
+      }
+    }
+
+    console.log(pc.default.green("\n🎉 Update complete!"));
   });
 
 cli

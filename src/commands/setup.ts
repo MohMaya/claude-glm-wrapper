@@ -88,14 +88,34 @@ export async function setupCommand() {
     if (mmKey) config.minimaxApiKey = mmKey as string;
   }
 
-  // 4. Shell Config
+  // 4. Install ccx globally
+  const s2 = spinner();
+  s2.start("Installing ccx globally...");
+  try {
+    const proc = spawn(["bun", "install", "-g", "cc-x10ded@latest"], {
+      stdio: ["ignore", "ignore", "ignore"]
+    });
+    await proc.exited;
+    if (proc.exitCode === 0) {
+      s2.stop(pc.green("ccx installed globally!"));
+    } else {
+      s2.stop(pc.yellow("Global install may have failed. You can still use: bunx cc-x10ded"));
+    }
+  } catch {
+    s2.stop(pc.yellow("Could not install globally (bun not found?). Use: bunx cc-x10ded"));
+  }
+
+  // 5. Shell Config
   const detectedShell = shellInt.detectShell();
 
   if (detectedShell !== "unknown") {
+    // Ensure bun bin is in PATH
+    await shellInt.ensureBunBinInPath(detectedShell);
+
     const installAliases = await select({
-      message: `Install shell aliases for ${detectedShell}? (cc, ccg, ccm...)`,
+      message: `Install shell aliases for ${detectedShell}? (ccg, ccm, ccf...)`,
       options: [
-        { value: "yes", label: "Yes, install standard aliases", hint: "Recommended" },
+        { value: "yes", label: "Yes, install aliases", hint: "Recommended" },
         { value: "no", label: "No, I will use 'ccx' directly" },
       ],
     });
@@ -106,9 +126,6 @@ export async function setupCommand() {
       const s = spinner();
       s.start("Installing aliases...");
       const success = await shellInt.installAliases(detectedShell);
-      
-      // Attempt to ensure local bin is in path
-      await shellInt.ensureLocalBinInPath(detectedShell);
 
       if (success) {
         s.stop("Aliases installed!");
@@ -120,6 +137,7 @@ export async function setupCommand() {
   }
 
   await configManager.write(config);
-  
-  outro(pc.green("Setup complete! Run 'ccx' to start."));
+
+  note(`To activate now, run: ${pc.cyan("source ~/.zshrc")} (or restart your terminal)`);
+  outro(pc.green("Setup complete! Run 'ccx' or 'ccg' to start."));
 }

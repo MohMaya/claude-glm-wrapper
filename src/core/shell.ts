@@ -83,51 +83,67 @@ export class ShellIntegrator {
   }
 
   private generateAliasBlock(shell: ShellType): string {
-    // Use bunx for zero-install experience
-    const cmd = "bunx cc-x10ded";
-
+    // Use global ccx binary for faster startup (no bunx resolution overhead)
+    // ccx is installed globally via: bun install -g cc-x10ded
     if (shell === "zsh" || shell === "bash") {
-      return `
-alias ccx='${cmd}'
-alias ccg='${cmd} --model=glm-4.7'
-alias ccg46='${cmd} --model=glm-4.6'
-alias ccg45='${cmd} --model=glm-4.5'
-alias ccf='${cmd} --model=glm-4.5-air'
-alias ccm='${cmd} --model=MiniMax-M2.1'
-`.trim();
+      return `# Installed via: bun install -g cc-x10ded
+# Update with: ccx update
+alias ccg='ccx --model=glm-4.7'
+alias ccg46='ccx --model=glm-4.6'
+alias ccg45='ccx --model=glm-4.5'
+alias ccf='ccx --model=glm-4.5-air'
+alias ccm='ccx --model=MiniMax-M2.1'`;
     }
     if (shell === "fish") {
-       return `
-alias ccx '${cmd}'
-alias ccg '${cmd} --model=glm-4.7'
-alias ccg46 '${cmd} --model=glm-4.6'
-alias ccg45 '${cmd} --model=glm-4.5'
-alias ccf '${cmd} --model=glm-4.5-air'
-alias ccm '${cmd} --model=MiniMax-M2.1'
-`.trim();
+       return `# Installed via: bun install -g cc-x10ded
+# Update with: ccx update
+alias ccg 'ccx --model=glm-4.7'
+alias ccg46 'ccx --model=glm-4.6'
+alias ccg45 'ccx --model=glm-4.5'
+alias ccf 'ccx --model=glm-4.5-air'
+alias ccm 'ccx --model=MiniMax-M2.1'`;
     }
     if (shell === "powershell") {
-        return `
-Function ccx { ${cmd} @args }
-Function ccg { ${cmd} --model=glm-4.7 @args }
-Function ccg46 { ${cmd} --model=glm-4.6 @args }
-Function ccg45 { ${cmd} --model=glm-4.5 @args }
-Function ccf { ${cmd} --model=glm-4.5-air @args }
-Function ccm { ${cmd} --model=MiniMax-M2.1 @args }
-`.trim();
+        return `# Installed via: bun install -g cc-x10ded
+# Update with: ccx update
+Function ccg { ccx --model=glm-4.7 @args }
+Function ccg46 { ccx --model=glm-4.6 @args }
+Function ccg45 { ccx --model=glm-4.5 @args }
+Function ccf { ccx --model=glm-4.5-air @args }
+Function ccm { ccx --model=MiniMax-M2.1 @args }`;
     }
     return "";
   }
   
+  async ensureBunBinInPath(shell: ShellType) {
+      if (platform() === "win32") return; // Windows handles PATH differently
+
+      const profile = this.getProfilePath(shell);
+      if (!profile || !existsSync(profile)) return;
+
+      const bunBin = join(this.home, ".bun", "bin");
+      const content = await Bun.file(profile).text();
+
+      // Check if bun bin is already in PATH (either via env or in profile)
+      const bunPathExport = `export PATH="$HOME/.bun/bin:$PATH"`;
+      const bunPathExportAlt = `export BUN_INSTALL="$HOME/.bun"`;
+
+      if (!content.includes(".bun/bin") && !process.env.PATH?.includes(bunBin)) {
+          // Add bun to PATH
+          const addition = `\n# Bun global binaries\nexport BUN_INSTALL="$HOME/.bun"\nexport PATH="$BUN_INSTALL/bin:$PATH"\n`;
+          await Bun.write(profile, content + addition);
+      }
+  }
+
   async ensureLocalBinInPath(shell: ShellType) {
       if (platform() === "win32") return; // Windows handles PATH differently (usually handled by installer or user)
 
       const profile = this.getProfilePath(shell);
       if (!profile || !existsSync(profile)) return;
-      
+
       const localBin = join(this.home, ".local", "bin");
       const content = await Bun.file(profile).text();
-      
+
       // Heuristic check
       if (!content.includes(localBin) && !process.env.PATH?.includes(localBin)) {
           const exportCmd = `export PATH="$HOME/.local/bin:$PATH"`;
@@ -135,6 +151,33 @@ Function ccm { ${cmd} --model=MiniMax-M2.1 @args }
               await Bun.write(profile, `${content}\n\n# Added by claude-glm-wrapper\n${exportCmd}\n`);
           }
       }
+  }
+
+  /**
+   * Migrate old bunx-based aliases to new ccx-based aliases
+   */
+  async migrateAliases(shell: ShellType): Promise<boolean> {
+      const profile = this.getProfilePath(shell);
+      if (!profile || !existsSync(profile)) return false;
+
+      let content = await Bun.file(profile).text();
+
+      // Check if migration is needed (old bunx-based aliases exist)
+      if (!content.includes("bunx cc-x10ded")) {
+          return false; // No migration needed
+      }
+
+      // Remove old block and install new one
+      const startMarker = "# >>> claude-glm-wrapper";
+      const endMarker = "# <<< claude-glm-wrapper <<<";
+      const regex = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`, "g");
+      content = content.replace(regex, "").trim();
+
+      // Write cleaned content
+      await Bun.write(profile, content);
+
+      // Install new aliases
+      return await this.installAliases(shell);
   }
 
   /**
