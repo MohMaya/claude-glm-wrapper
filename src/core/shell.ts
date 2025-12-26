@@ -181,6 +181,53 @@ Function ccm { ccx --model=MiniMax-M2.1 @args }`;
   }
 
   /**
+   * Remove old ccx binaries from common locations that might shadow the bun global
+   */
+  async cleanupOldBinaries(): Promise<string[]> {
+    const removed: string[] = [];
+    const oldLocations = [
+      join(this.home, ".local", "bin", "ccx"),
+      join(this.home, ".npm-global", "bin", "ccx"),
+      join(this.home, "bin", "ccx"),
+      "/usr/local/bin/ccx",
+    ];
+
+    for (const loc of oldLocations) {
+      if (existsSync(loc)) {
+        try {
+          const { unlinkSync } = await import("fs");
+          unlinkSync(loc);
+          removed.push(loc);
+        } catch {
+          // Ignore permission errors
+        }
+      }
+    }
+
+    return removed;
+  }
+
+  /**
+   * Check if bun bin is properly prioritized in PATH
+   */
+  isBunBinFirst(): boolean {
+    const bunBin = join(this.home, ".bun", "bin");
+    const path = process.env.PATH || "";
+    const paths = path.split(":");
+
+    // Check if bun bin comes before other common locations
+    const bunIndex = paths.findIndex(p => p.includes(".bun/bin"));
+    const localIndex = paths.findIndex(p => p.includes(".local/bin"));
+    const npmGlobalIndex = paths.findIndex(p => p.includes(".npm-global/bin"));
+
+    if (bunIndex === -1) return false;
+    if (localIndex !== -1 && localIndex < bunIndex) return false;
+    if (npmGlobalIndex !== -1 && npmGlobalIndex < bunIndex) return false;
+
+    return true;
+  }
+
+  /**
    * Hunt for the 'claude' binary in common locations
    */
   async findClaudeBinary(): Promise<string | null> {

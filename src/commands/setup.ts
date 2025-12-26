@@ -88,21 +88,32 @@ export async function setupCommand() {
     if (mmKey) config.minimaxApiKey = mmKey as string;
   }
 
-  // 4. Install ccx globally
+  // 4. Clean up old binaries and install ccx globally
   const s2 = spinner();
-  s2.start("Installing ccx globally...");
+  s2.start("Cleaning up old installations...");
+
+  // Remove old binaries that might shadow the new one
+  const removed = await shellInt.cleanupOldBinaries();
+  if (removed.length > 0) {
+    s2.stop(pc.yellow(`Removed ${removed.length} old ccx binary(s)`));
+  } else {
+    s2.stop("No old binaries found");
+  }
+
+  const s3 = spinner();
+  s3.start("Installing ccx globally...");
   try {
     const proc = spawn(["bun", "install", "-g", "cc-x10ded@latest"], {
       stdio: ["ignore", "ignore", "ignore"]
     });
     await proc.exited;
     if (proc.exitCode === 0) {
-      s2.stop(pc.green("ccx installed globally!"));
+      s3.stop(pc.green("ccx installed globally!"));
     } else {
-      s2.stop(pc.yellow("Global install may have failed. You can still use: bunx cc-x10ded"));
+      s3.stop(pc.yellow("Global install may have failed. You can still use: bunx cc-x10ded"));
     }
   } catch {
-    s2.stop(pc.yellow("Could not install globally (bun not found?). Use: bunx cc-x10ded"));
+    s3.stop(pc.yellow("Could not install globally (bun not found?). Use: bunx cc-x10ded"));
   }
 
   // 5. Shell Config

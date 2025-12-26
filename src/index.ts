@@ -23,14 +23,26 @@ cli
 cli
   .command("update", "Update ccx to the latest version")
   .option("--skip-aliases", "Skip alias installation")
-  .action(async (options: { skipAliases?: boolean }) => {
+  .option("--skip-cleanup", "Skip removal of old binaries")
+  .action(async (options: { skipAliases?: boolean; skipCleanup?: boolean }) => {
     const { spawn } = await import("bun");
     const { ShellIntegrator } = await import("./core/shell");
     const pc = await import("picocolors");
 
-    console.log(pc.default.blue("Updating ccx..."));
+    const shellInt = new ShellIntegrator();
+    const shell = shellInt.detectShell();
 
-    // Update via bun global install
+    // 1. Clean up old binaries first
+    if (!options.skipCleanup) {
+      const removed = await shellInt.cleanupOldBinaries();
+      if (removed.length > 0) {
+        console.log(pc.default.yellow("🧹 Removed old ccx binaries:"));
+        removed.forEach(p => console.log(pc.default.dim(`   ${p}`)));
+      }
+    }
+
+    // 2. Update via bun global install
+    console.log(pc.default.blue("📦 Updating ccx..."));
     const proc = spawn(["bun", "install", "-g", "cc-x10ded@latest"], {
       stdio: ["inherit", "inherit", "inherit"]
     });
@@ -43,25 +55,29 @@ cli
 
     console.log(pc.default.green("✅ ccx updated!"));
 
-    // Always reinstall aliases (unless skipped)
-    if (!options.skipAliases) {
-      const shellInt = new ShellIntegrator();
-      const shell = shellInt.detectShell();
+    // 3. Ensure bun bin is in PATH (and prioritized)
+    if (shell !== "unknown") {
+      await shellInt.ensureBunBinInPath(shell);
 
-      if (shell !== "unknown") {
-        // Ensure bun bin is in PATH
-        await shellInt.ensureBunBinInPath(shell);
+      if (!shellInt.isBunBinFirst()) {
+        console.log(pc.default.yellow("⚠️  ~/.bun/bin should be first in PATH for ccx to work correctly."));
+        console.log(pc.default.dim("   Add this to the TOP of your shell config:"));
+        console.log(pc.default.cyan('   export PATH="$HOME/.bun/bin:$PATH"'));
+      }
+    }
 
-        // Install/update aliases
-        const success = await shellInt.installAliases(shell);
-        if (success) {
-          console.log(pc.default.green("✅ Aliases updated!"));
-          console.log(pc.default.dim(`   Run: source ~/.${shell}rc (or restart your terminal)`));
-        }
+    // 4. Reinstall aliases (unless skipped)
+    if (!options.skipAliases && shell !== "unknown") {
+      const success = await shellInt.installAliases(shell);
+      if (success) {
+        console.log(pc.default.green("✅ Aliases updated!"));
       }
     }
 
     console.log(pc.default.green("\n🎉 Update complete!"));
+    if (shell !== "unknown") {
+      console.log(pc.default.dim(`   Run: source ~/.${shell}rc (or restart your terminal)`));
+    }
   });
 
 cli
