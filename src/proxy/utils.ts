@@ -53,6 +53,16 @@ export class ApiError extends Error {
   }
 }
 
+export function parseErrorResponse(text: string): string {
+  try {
+    const json = JSON.parse(text);
+    if (json.error?.message) return json.error.message;
+    if (json.message) return json.message;
+    if (json.error) return typeof json.error === "string" ? json.error : JSON.stringify(json.error);
+  } catch {}
+  return text;
+}
+
 // Convert an async generator to a ReadableStream
 export function toReadableStream<T>(gen: AsyncGenerator<T>): ReadableStream<T> {
   return new ReadableStream({

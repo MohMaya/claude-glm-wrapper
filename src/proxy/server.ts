@@ -6,7 +6,7 @@ import type { Config } from "../core/config";
 import type { AnthropicRequest } from "./types";
 
 export function startProxyServer(config: Config, port: number = 17870) {
-  return serve({
+  const server = serve({
     port,
     hostname: "127.0.0.1",
     async fetch(req) {
@@ -85,4 +85,14 @@ export function startProxyServer(config: Config, port: number = 17870) {
       }
     },
   });
+
+  const shutdown = () => {
+    server.stop();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+
+  return server;
 }

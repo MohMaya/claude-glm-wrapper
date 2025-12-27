@@ -1,6 +1,9 @@
 import { intro, outro, spinner } from "@clack/prompts";
 import { ShellIntegrator } from "../core/shell";
 import { ConfigManager } from "../core/config";
+import { telemetry } from "../core/telemetry";
+import { circuitBreaker } from "../core/circuit-breaker";
+import { pluginManager } from "../core/plugins";
 import * as pc from "picocolors";
 import { existsSync } from "fs";
 import { join } from "path";
@@ -30,7 +33,9 @@ export async function doctorCommand() {
 
   if (foundOld.length > 0) {
     issues.push("❌ Old ccx binaries found that may shadow the new one:");
-    foundOld.forEach(p => issues.push(`   ${p}`));
+    for (const p of foundOld) {
+      issues.push(`   ${p}`);
+    }
     issues.push("   👉 Run 'ccx update' to remove them automatically");
   } else {
     checks.push("✅ No conflicting binaries");
@@ -58,7 +63,7 @@ export async function doctorCommand() {
   if (!config.zaiApiKey && !config.minimaxApiKey && Object.keys(config.providers).length === 0) {
     issues.push("❌ No API keys configured. Run 'ccx setup'.");
   } else {
-    const keys = [];
+    const keys: string[] = [];
     if (config.zaiApiKey) keys.push("Z.AI");
     if (config.minimaxApiKey) keys.push("Minimax");
     if (config.providers.openai?.apiKey) keys.push("OpenAI");
@@ -91,7 +96,6 @@ export async function doctorCommand() {
     if (profile && existsSync(profile)) {
       const content = await Bun.file(profile).text();
       if (content.includes("claude-glm-wrapper")) {
-        // Check if using old bunx-based aliases
         if (content.includes("bunx cc-x10ded")) {
           warnings.push("⚠️  Old bunx-based aliases detected");
           warnings.push("   👉 Run 'ccx update' to migrate to faster direct aliases");
@@ -105,18 +109,90 @@ export async function doctorCommand() {
   }
   s.stop("Shell check complete");
 
+  // 6. Telemetry (Local)
+  s.start("Checking telemetry...");
+  const sessionDuration = telemetry.getSessionDuration();
+  const requestCount = telemetry.getRequestCount();
+  const providerStats = telemetry.getProviderStats();
+  const errors = telemetry.getErrors();
+  const fallbacks = telemetry.getFallbacks();
+
+  console.log("\n" + pc.bold("Telemetry (this session):"));
+  console.log(`  Session: ${Math.round(sessionDuration / 1000)}s | Requests: ${requestCount}`);
+
+  if (Object.keys(providerStats).length > 0) {
+    console.log("\n  Provider Usage:");
+    for (const [provider, stats] of Object.entries(providerStats)) {
+      const statusIcon = stats.errors > 0 ? "🔴" : "🟢";
+      console.log(`  ${statusIcon} ${provider}: ${stats.count} requests (avg ${stats.avgLatency}ms)${stats.errors > 0 ? `, ${stats.errors} errors` : ""}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    console.log("\n  Errors:");
+    for (const error of errors) {
+      console.log(`    ${error.provider}: ${error.error} (${error.count})`);
+    }
+  }
+
+  if (fallbacks.length > 0) {
+    console.log("\n  Fallbacks:");
+    for (const fallback of fallbacks) {
+      console.log(`    ${fallback.fromProvider} → ${fallback.toProvider} (${fallback.reason})`);
+    }
+  }
+
+  if (requestCount === 0) {
+    console.log("  No requests yet in this session.");
+  }
+  s.stop("Telemetry check complete");
+
+  // 7. Circuit Breaker Status
+  s.start("Checking circuit breaker...");
+  const circuitStates = circuitBreaker.getStates();
+  if (circuitStates.length > 0) {
+    console.log("\n" + pc.bold("Circuit Breaker Status:"));
+    for (const state of circuitStates) {
+      const icon = state.state === "closed" ? "🟢" : state.state === "half-open" ? "🟡" : "🔴";
+      console.log(`  ${icon} ${state.provider}: ${state.state} (${state.failures} failures)`);
+    }
+  } else {
+    console.log("  No circuit breaker activity yet.");
+  }
+  s.stop("Circuit breaker check complete");
+
+  // 8. Plugins
+  s.start("Checking plugins...");
+  const pluginCount = pluginManager.getPluginCount();
+  if (pluginCount > 0) {
+    const plugins = pluginManager.getPlugins();
+    console.log(`\n  Installed Plugins: ${pluginCount}`);
+    for (const plugin of plugins) {
+      console.log(`    - ${plugin.name} v${plugin.version}`);
+    }
+  } else {
+    console.log("  No plugins installed.");
+  }
+  s.stop("Plugin check complete");
+
   // Report
   console.log("\n" + pc.bold("Diagnostic Report:"));
-  checks.forEach(c => console.log(c));
+  for (const c of checks) {
+    console.log(c);
+  }
 
   if (warnings.length > 0) {
     console.log("");
-    warnings.forEach(w => console.log(pc.yellow(w)));
+    for (const w of warnings) {
+      console.log(pc.yellow(w));
+    }
   }
 
   if (issues.length > 0) {
     console.log("");
-    issues.forEach(i => console.log(pc.red(i)));
+    for (const i of issues) {
+      console.log(pc.red(i));
+    }
     outro(pc.red("Issues found. Please resolve them above."));
     process.exit(1);
   } else if (warnings.length > 0) {
