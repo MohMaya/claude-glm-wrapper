@@ -4,7 +4,11 @@ import { runCommand } from "./commands/run";
 import { setupCommand } from "./commands/setup";
 import { configCommand } from "./commands/config";
 import { doctorCommand } from "./commands/doctor";
+import { modelsCommand } from "./commands/models";
 import packageJson from "../package.json";
+import { createLogger } from "./core/logger";
+
+const logger = createLogger();
 
 const cli = cac("ccx");
 
@@ -21,6 +25,12 @@ cli
   .action(doctorCommand);
 
 cli
+  .command("models", "List all available models")
+  .action(async () => {
+    await modelsCommand();
+  });
+
+cli
   .command("update", "Update ccx to the latest version")
   .option("--skip-aliases", "Skip alias installation")
   .option("--skip-cleanup", "Skip removal of old binaries")
@@ -32,16 +42,16 @@ cli
     const shellInt = new ShellIntegrator();
     const shell = shellInt.detectShell();
 
-    // 1. Clean up old binaries first
     if (!options.skipCleanup) {
       const removed = await shellInt.cleanupOldBinaries();
       if (removed.length > 0) {
         console.log(pc.default.yellow("🧹 Removed old ccx binaries:"));
-        removed.forEach(p => console.log(pc.default.dim(`   ${p}`)));
+        for (const p of removed) {
+          console.log(pc.default.dim(`   ${p}`));
+        }
       }
     }
 
-    // 2. Update via bun global install
     console.log(pc.default.blue("📦 Updating ccx..."));
     const proc = spawn(["bun", "install", "-g", "cc-x10ded@latest"], {
       stdio: ["inherit", "inherit", "inherit"]
@@ -55,7 +65,6 @@ cli
 
     console.log(pc.default.green("✅ ccx updated!"));
 
-    // 3. Ensure bun bin is in PATH (and prioritized)
     if (shell !== "unknown") {
       await shellInt.ensureBunBinInPath(shell);
 
@@ -66,7 +75,6 @@ cli
       }
     }
 
-    // 4. Reinstall aliases (unless skipped)
     if (!options.skipAliases && shell !== "unknown") {
       const success = await shellInt.installAliases(shell);
       if (success) {
@@ -84,8 +92,18 @@ cli
   .command("[...args]", "Run Claude Code with proxy (default)")
   .option("-m, --model <model>", "Override the model (e.g., glm-4.5, openai:gpt-4o)")
   .option("-p, --port <port>", "Port for the local proxy (default: 17870)")
+  .option("--json-log", "Output logs in JSON format")
   .action((args, options) => {
-    runCommand(args, options);
+    if (options.jsonLog) {
+      logger.setJsonMode(true);
+    }
+    runCommand(args, { model: options.model, port: options.port });
+  });
+
+cli
+  .command("--list", "List all available models (alias for 'models')")
+  .action(async () => {
+    await modelsCommand();
   });
 
 cli.help();

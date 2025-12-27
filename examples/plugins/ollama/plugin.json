@@ -1,0 +1,7 @@
+{
+  "id": "ollama",
+  "name": "Ollama (Local)",
+  "version": "1.0.0",
+  "description": "Use local Ollama models with Claude Code",
+  "entry": "./dist/index.js"
+}

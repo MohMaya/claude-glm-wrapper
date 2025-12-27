@@ -1,0 +1,13 @@
+{
+  "name": "@ccx/plugin-types",
+  "version": "1.0.0",
+  "description": "TypeScript types for ccx plugins",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "keywords": ["ccx", "claude", "plugin", "types"],
+  "author": "",
+  "license": "MIT"
+}
