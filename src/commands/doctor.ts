@@ -2,8 +2,6 @@ import { intro, outro, spinner } from "@clack/prompts";
 import { ShellIntegrator } from "../core/shell";
 import { ConfigManager } from "../core/config";
 import { telemetry } from "../core/telemetry";
-import { circuitBreaker } from "../core/circuit-breaker";
-import { pluginManager } from "../core/plugins";
 import * as pc from "picocolors";
 import { existsSync } from "fs";
 import { join } from "path";
@@ -111,69 +109,25 @@ export async function doctorCommand() {
 
   // 6. Telemetry (Local)
   s.start("Checking telemetry...");
-  const sessionDuration = telemetry.getSessionDuration();
-  const requestCount = telemetry.getRequestCount();
+  const stats = telemetry.getStats();
   const providerStats = telemetry.getProviderStats();
-  const errors = telemetry.getErrors();
-  const fallbacks = telemetry.getFallbacks();
-
+  
   console.log("\n" + pc.bold("Telemetry (this session):"));
-  console.log(`  Session: ${Math.round(sessionDuration / 1000)}s | Requests: ${requestCount}`);
+  console.log(`  Total: ${stats.total} | Success: ${stats.successful} | Failed: ${stats.failed}`);
 
   if (Object.keys(providerStats).length > 0) {
     console.log("\n  Provider Usage:");
     for (const [provider, stats] of Object.entries(providerStats)) {
       const statusIcon = stats.errors > 0 ? "🔴" : "🟢";
-      console.log(`  ${statusIcon} ${provider}: ${stats.count} requests (avg ${stats.avgLatency}ms)${stats.errors > 0 ? `, ${stats.errors} errors` : ""}`);
+      const errorMsg = stats.errors > 0 ? `, ${stats.errors} errors` : "";
+      console.log(`  ${statusIcon} ${provider}: ${stats.count} requests${errorMsg}`);
     }
   }
 
-  if (errors.length > 0) {
-    console.log("\n  Errors:");
-    for (const error of errors) {
-      console.log(`    ${error.provider}: ${error.error} (${error.count})`);
-    }
-  }
-
-  if (fallbacks.length > 0) {
-    console.log("\n  Fallbacks:");
-    for (const fallback of fallbacks) {
-      console.log(`    ${fallback.fromProvider} → ${fallback.toProvider} (${fallback.reason})`);
-    }
-  }
-
-  if (requestCount === 0) {
+  if (stats.total === 0) {
     console.log("  No requests yet in this session.");
   }
   s.stop("Telemetry check complete");
-
-  // 7. Circuit Breaker Status
-  s.start("Checking circuit breaker...");
-  const circuitStates = circuitBreaker.getStates();
-  if (circuitStates.length > 0) {
-    console.log("\n" + pc.bold("Circuit Breaker Status:"));
-    for (const state of circuitStates) {
-      const icon = state.state === "closed" ? "🟢" : state.state === "half-open" ? "🟡" : "🔴";
-      console.log(`  ${icon} ${state.provider}: ${state.state} (${state.failures} failures)`);
-    }
-  } else {
-    console.log("  No circuit breaker activity yet.");
-  }
-  s.stop("Circuit breaker check complete");
-
-  // 8. Plugins
-  s.start("Checking plugins...");
-  const pluginCount = pluginManager.getPluginCount();
-  if (pluginCount > 0) {
-    const plugins = pluginManager.getPlugins();
-    console.log(`\n  Installed Plugins: ${pluginCount}`);
-    for (const plugin of plugins) {
-      console.log(`    - ${plugin.name} v${plugin.version}`);
-    }
-  } else {
-    console.log("  No plugins installed.");
-  }
-  s.stop("Plugin check complete");
 
   // Report
   console.log("\n" + pc.bold("Diagnostic Report:"));

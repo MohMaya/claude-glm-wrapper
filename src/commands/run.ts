@@ -2,14 +2,12 @@ import { spawn } from "bun";
 import { ConfigManager } from "../core/config";
 import { startProxyServer } from "../proxy/server";
 import { ShellIntegrator } from "../core/shell";
-import { pluginManager } from "../core/plugins";
 import { parseProviderModel } from "../proxy/map";
 import { telemetry } from "../core/telemetry";
 import * as pc from "picocolors";
 
 export async function runCommand(args: string[], options: { model?: string; port?: number }) {
-  await pluginManager.discoverAndLoad();
-
+  const startTime = Date.now();
   const configManager = new ConfigManager();
   const config = await configManager.read();
 
@@ -81,12 +79,16 @@ export async function runCommand(args: string[], options: { model?: string; port
     });
 
     const code = await proc.exited;
+    
+    const latencyMs = Date.now() - startTime;
+    telemetry.trackRequest(provider, model, latencyMs, code === 0);
+    
     process.exit(code);
   } catch (e: any) {
     console.error(pc.red(`Error starting Claude: ${e.message}`));
+    telemetry.trackRequest(provider, model, Date.now() - startTime, false, "spawn_error");
     process.exit(1);
   } finally {
     if (server) server.stop();
-    telemetry.trackEvent({ type: "session_end" });
   }
 }

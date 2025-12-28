@@ -1,17 +1,11 @@
 import { join } from "path";
 import { existsSync, writeFileSync, readFileSync } from "fs";
 import { homedir } from "os";
-import type { TelemetryEvent } from "../types";
-import { createLogger } from "./logger";
-
-const logger = createLogger();
 
 export interface TelemetryData {
   sessionId: string;
   sessionStart: number;
   requests: TelemetryRequest[];
-  errors: TelemetryError[];
-  fallbacks: TelemetryFallback[];
 }
 
 interface TelemetryRequest {
@@ -23,24 +17,10 @@ interface TelemetryRequest {
   errorCode?: string;
 }
 
-interface TelemetryError {
-  provider: string;
-  error: string;
-  count: number;
-}
-
-interface TelemetryFallback {
-  fromProvider: string;
-  toProvider: string;
-  reason: string;
-  timestamp: number;
-}
-
 export class Telemetry {
   private data: TelemetryData;
   private telemetryDir: string;
   private telemetryFile: string;
-  private enabled: boolean = true;
   private static instance: Telemetry | null = null;
 
   private constructor() {
@@ -74,42 +54,28 @@ export class Telemetry {
         return data;
       }
     } catch (error) {
-      logger.warn("Failed to load telemetry data", { error: (error as Error).message });
+      console.warn("[Telemetry] Failed to load data:", (error as Error).message);
     }
 
     return this.createNewSession();
   }
 
   private createNewSession(): TelemetryData {
-    return {
-      sessionId: this.generateSessionId(),
-      sessionStart: Date.now(),
-      requests: [],
-      errors: [],
-      fallbacks: []
-    };
-  }
-
-  private generateSessionId(): string {
     const array = new Uint8Array(16);
     crypto.getRandomValues(array);
-    return Array.from(array, byte => byte.toString(16).padStart(2, "0")).join("");
+    return {
+      sessionId: Array.from(array, byte => byte.toString(16).padStart(2, "0")).join(""),
+      sessionStart: Date.now(),
+      requests: []
+    };
   }
 
   private save(): void {
     try {
       writeFileSync(this.telemetryFile, JSON.stringify(this.data, null, 2));
     } catch (error) {
-      logger.warn("Failed to save telemetry data", { error: (error as Error).message });
+      console.warn("[Telemetry] Failed to save:", (error as Error).message);
     }
-  }
-
-  disable(): void {
-    this.enabled = false;
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
   }
 
   trackRequest(
@@ -119,134 +85,45 @@ export class Telemetry {
     success: boolean,
     errorCode?: string
   ): void {
-    if (!this.enabled) return;
-
     const request: TelemetryRequest = {
       provider,
       model,
       latencyMs,
       success,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      errorCode
     };
-
-    if (errorCode) {
-      request.errorCode = errorCode;
-      this.trackError(provider, errorCode);
-    }
 
     this.data.requests.push(request);
     this.save();
   }
 
-  private trackError(provider: string, error: string): void {
-    const existing = this.data.errors.find(e => e.provider === provider && e.error === error);
-    if (existing) {
-      existing.count++;
-    } else {
-      this.data.errors.push({ provider, error, count: 1 });
-    }
-  }
-
-  trackFallback(fromProvider: string, toProvider: string, reason: string): void {
-    if (!this.enabled) return;
-
-    this.data.fallbacks.push({
-      fromProvider,
-      toProvider,
-      reason,
-      timestamp: Date.now()
-    });
-    this.save();
-  }
-
-  trackEvent(event: Omit<TelemetryEvent, "timestamp">): void {
-    if (!this.enabled) return;
-
-    const fullEvent: TelemetryEvent = {
-      ...event,
-      timestamp: Date.now()
+  getStats(): { total: number; successful: number; failed: number } {
+    const requests = this.data.requests;
+    return {
+      total: requests.length,
+      successful: requests.filter(r => r.success).length,
+      failed: requests.filter(r => !r.success).length
     };
-
-    switch (event.type) {
-      case "request_complete":
-        if (event.provider && event.model && event.latencyMs !== undefined) {
-          this.trackRequest(
-            event.provider,
-            event.model,
-            event.latencyMs,
-            event.success ?? true,
-            event.errorCode
-          );
-        }
-        break;
-      case "fallback":
-        if (event.fromProvider && event.toProvider) {
-          this.trackFallback(event.fromProvider, event.toProvider, event.reason || "unknown");
-        }
-        break;
-    }
   }
 
-  getSessionId(): string {
-    return this.data.sessionId;
-  }
-
-  getSessionStart(): number {
-    return this.data.sessionStart;
-  }
-
-  getRequestCount(): number {
-    return this.data.requests.length;
-  }
-
-  getRequests(): TelemetryRequest[] {
-    return [...this.data.requests];
-  }
-
-  getErrors(): TelemetryError[] {
-    return [...this.data.errors];
-  }
-
-  getFallbacks(): TelemetryFallback[] {
-    return [...this.data.fallbacks];
-  }
-
-  getProviderStats(): Record<string, { count: number; avgLatency: number; errors: number }> {
-    const stats: Record<string, { count: number; totalLatency: number; errors: number }> = {};
-
+  getProviderStats(): Record<string, { count: number; errors: number }> {
+    const stats: Record<string, { count: number; errors: number }> = {};
+    
     for (const request of this.data.requests) {
       if (!stats[request.provider]) {
-        stats[request.provider] = { count: 0, totalLatency: 0, errors: 0 };
+        stats[request.provider] = { count: 0, errors: 0 };
       }
-      const providerStats = stats[request.provider];
-      if (providerStats) {
-        providerStats.count++;
-        providerStats.totalLatency += request.latencyMs;
-        if (!request.success) {
-          providerStats.errors++;
-        }
+      const providerStat = stats[request.provider];
+      if (providerStat) {
+          providerStat.count++;
+          if (!request.success) {
+            providerStat.errors++;
+          }
       }
     }
-
-    const result: Record<string, { count: number; avgLatency: number; errors: number }> = {};
-    for (const [provider, stat] of Object.entries(stats)) {
-      result[provider] = {
-        count: stat.count,
-        avgLatency: Math.round(stat.totalLatency / stat.count),
-        errors: stat.errors
-      };
-    }
-
-    return result;
-  }
-
-  getSessionDuration(): number {
-    return Date.now() - this.data.sessionStart;
-  }
-
-  clear(): void {
-    this.data = this.createNewSession();
-    this.save();
+    
+    return stats;
   }
 }
 

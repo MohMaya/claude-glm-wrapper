@@ -92,10 +92,14 @@ cli
   .command("[...args]", "Run Claude Code with proxy (default)")
   .option("-m, --model <model>", "Override the model (e.g., glm-4.5, openai:gpt-4o)")
   .option("-p, --port <port>", "Port for the local proxy (default: 17870)")
+  .option("--debug", "Enable debug logging")
   .option("--json-log", "Output logs in JSON format")
   .action((args, options) => {
     if (options.jsonLog) {
       logger.setJsonMode(true);
+    }
+    if (options.debug) {
+      logger.setDebugMode(true);
     }
     runCommand(args, { model: options.model, port: options.port });
   });

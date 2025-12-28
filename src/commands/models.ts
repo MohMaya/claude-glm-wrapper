@@ -1,5 +1,4 @@
 import { providerRegistry } from "../core/registry";
-import { pluginManager } from "../core/plugins";
 import { createLogger } from "../core/logger";
 
 const logger = createLogger();
@@ -8,13 +7,10 @@ export async function modelsCommand(): Promise<void> {
   console.log("\n");
 
   const providers = providerRegistry.listProviders();
-  const plugins = pluginManager.getPlugins();
-
   const allModels = providerRegistry.getAllModels();
 
   const maxProviderWidth = Math.max(
-    ...providers.map(p => p.name.length),
-    ...plugins.map(p => p.name.length)
+    ...providers.map(p => p.name.length)
   );
   const maxModelWidth = Math.max(
     ...allModels.map(m => `${m.provider.id}:${m.model.id}`.length),
@@ -37,26 +33,6 @@ export async function modelsCommand(): Promise<void> {
       const modelLine = `  ├── ${model.id}${defaultMark}`;
       console.log(`║  ${modelLine.padEnd(maxProviderWidth + maxModelWidth + 3)}║`);
     }
-  }
-
-  console.log("║");
-  console.log("╠" + "═".repeat(maxProviderWidth + maxModelWidth + 7) + "╣");
-
-  if (plugins.length > 0) {
-    console.log("║");
-    console.log("║  Installed Plugins (" + plugins.length + ")");
-
-    for (const plugin of plugins) {
-      console.log(`║  ├── ${plugin.name} v${plugin.version}`);
-      for (const model of plugin.models) {
-        const modelLine = `  │   ├── ${model.id}`;
-        console.log(`║  ${modelLine.padEnd(maxProviderWidth + maxModelWidth + 3)}║`);
-      }
-    }
-  } else {
-    console.log("║");
-    console.log("║  Plugins: 0 installed");
-    console.log("║  To add a plugin, create: ~/.config/claude-glm/plugins/<name>/");
   }
 
   console.log("║");
